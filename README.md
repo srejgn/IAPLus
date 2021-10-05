@@ -1,4 +1,4 @@
-# IAPLus
+# IAPlus
 SPSS Macro code for Item Analysis
 
 About IAPlus
