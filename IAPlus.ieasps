@@ -1277,7 +1277,9 @@ graph / line(multiple)= mean(pplus) by Level by !bv
       / panel colvar = criteria.
 split file off.
 !ifend
+
 !doend
+omsend tag =['ctables1' 'ctables2'].
 !ifend
 !ifend
 
