@@ -4,7 +4,7 @@
 * 
 * Please report bugs to: egonzalez@ets.org or eugene.gonzalez@iea-hamburg.de.
 *
-* About the program: This program computes a battery of item and scale related statistics and saves the output 
+* About the program: This program computes a battery of item and scale related statistics and saves the output
 *                    to CSV files. It computes these statistics overall across the entire dataset, and 
 *                    for each of the groups created with the unique combinations of CLASSVARS and BYVAR.
 *.
@@ -20,9 +20,10 @@ define !IAPlus  (indir        = !charend('/')             /
                  seed         = !charend('/') !default(random) /
                  scale        = !charend('/')             /
                  scalelbl     = !charend('/') !default('No label provided')  /
+                 gotitems     = !charend('/') !default(N) /
                  items        = !charend('/')             /
                  keys         = !charend('/')             /
-                 IsZero       = !charend('/') !default(" 0 thru 9") /
+                 IsZero       = !charend('/') !default(" 0 thru  9") /
                  IsOne        = !charend('/') !default("10 thru 19") /
                  IsTwo        = !charend('/') !default("20 thru 29") /
                  IsThree      = !charend('/') !default("30 thru 39") /
@@ -42,6 +43,7 @@ define !IAPlus  (indir        = !charend('/')             /
                  NotAdmin     = !charend('/')             /
                  classvars    = !charend('/')             /
                  byvars       = !charend('/')             /
+                 examinegrp   = !charend('/') !default(N) /
                  NullByVar    = !charend('/') !default(N) /
                  idvars       = !charend('/')             /
                  keepvars     = !charend('/')             /
@@ -62,12 +64,15 @@ define !IAPlus  (indir        = !charend('/')             /
                  timestamp    = !charend('/') !default(Y) /
                  sourcestamp  = !charend('/') !default(Y) /
                  dotables     = !charend('/') !default(Y) /
+                 dographs     = !charend('/') !default(Y) /
+                 showmn       = !charend('/') !default(N) /
                  graphn       = !charend('/') !default(10)/ 
                  viewcod      = !charend('/') !default(N) /
                  clean        = !charend('/') !default(Y) /
-                 DoHTML       = !charend('/') !default(Y) /
-                 DoXLSX       = !charend('/') !default(Y) /
+                 DoHTML       = !charend('/') !default(N) /
+                 DoXLSX       = !charend('/') !default(N) /
                  DoIRT        = !charend('/') !default(N) /
+                 Converge     = !charend('/') !default(0.005)  /
                  Maxiter      = !charend('/') !default(1000)   /
                  IrtModel     = !charend('/') !default('1PL')  /
                  Regressors   = !charend('/')                  /
@@ -78,8 +83,8 @@ define !IAPlus  (indir        = !charend('/')             /
                  WhereIsR     = !charend('/') !default("C:\Program Files\R\R-4.1.2\bin") /
                  SaveRData    = !charend('/') !default(N)      ).
 
-preserve.
 omsend tag = ALL.
+preserve.
 
 OMS  / SELECT ALL
      / IF COMMANDS=['Alter Type' 'Variables to Cases']
@@ -93,35 +98,48 @@ set mprint=off printback=off.
 !ifend
 
 set olang=English locale=English unicode=no.
-set onumbers=values ovatrs=names tnumbers=LABELS tvars=names.
+set onumbers=values ovars=names tnumbers=LABELS tvars=names.
 
 dataset close all.
 new file.
 output close all.
 output new name = !outfile.
 
-* pick first and last item.
-!let !firstitem = !head(!items)
-!do !i !in(!items)
-!let !lastitem = !i
-!doend
-
 * create a list with the variables used as criteria.
 !let !critvars = !null
 !if (!scale !ne !null) !then
 !if (!upcase(!UseSumScr) = Y) !then
-!let !critvars = !concat(!critvars,!blank(1),!scale,"_sumscr ")
+!let !critvars = !concat(!upcase(!critvars),!blank(1),!upcase(!scale),"_sumscr ")
 !ifend
-!let !critvars = !concat(!critvars,!blank(1),!scale,"_pplus",!blank(1),!critvar)
+!let !critvars = !concat(!upcase(!critvars),!blank(1),!upcase(!scale),"_pplus",!blank(1),!upcase(!critvar))
 !else
-!let !critvars = !critvar
+!let !critvars = !upcase(!critvar)
 !ifend
 
 * create lists with all the classification variables. this gets re-created later.
 !let !allcv  = !concat(!classvars,!blank(1),!byvars)
 !let !allcv2 = !null
-!do !cv !in(!allcv)
+!do !cv !in(!upcase(!allcv))
 !let !allcv2 = !concat(!allcv2,!blank(1),!upcase(!cv),"_n")
+!doend
+
+* assign item info the parameters.
+!if (!upcase(!gotitems) = Y) !then
+!let !fitems   = !upcase(!eval(!ix))
+!let !fkeys    = !upcase(!eval(!kx))
+!let !fmaxscrs = !eval(!mx)
+!let !freverse = !upcase(!eval(!rx))
+!else
+!let !fitems   = !upcase(!items)
+!let !fkeys    = !upcase(!keys)
+!let !fmaxscrs = !maxscrs
+!let !freverse = !upcase(!reverse)
+!ifend
+
+* pick first and last item.
+!let !firstitem = !head(!fitems)
+!do !i !in(!fitems)
+!let !lastitem = !i
 !doend
 
 * Get file with analysis variables and score the items.
@@ -129,11 +147,11 @@ echo "* * *".
 echo "Retrieving file with the analysis variables".
 echo "* * *".
 get file = !quote(!concat(!unquote(!indir),"\",!infile,".sav"))
-  / keep = !idvars !keepvars !classvars !byvars !items !wgtvar !critvar !selvar !regressors.
+  / keep = !idvars !keepvars !classvars !byvars !fitems !wgtvar !critvar !selvar !regressors.
 weight off.
 
 compute CaseSeq = $casenum.
-execute.
+*execute.
 
 * Check if weight variable was specified, if not create one called WGTVAR such that wgt = 1 for all cases.
 !if (!wgtvar = !null) !then
@@ -160,12 +178,12 @@ compute k = 1.
 variable labels k "Constant Variable".
 value labels k 1 "Constant Value (1)".
 
-* flag cases with same response for all items.
+* Flag cases with same response for all items.
 * these are used later for the RespType type variable.
-!if (!upcase(!ChkStrtLn) = Y) !then
+!if (!upcase(!ChkStrtLn) = Y !and !scale !ne !null) !then
 compute !concat(!scale,"_SameResponses") = 0.
 if (!concat("var.",!atleast)( !firstitem to !lastitem ) = 0) !concat(!scale,"_SameResponses") = 1.
-execute.
+*execute.
 *freq var = !concat(!scale,"_SameResponses").
 !ifend
 
@@ -181,11 +199,11 @@ oms / select all
     / IF COMMANDS=['File Information'] SUBTYPES=['Variable Values']
     / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav")) viewer=no
     / tag = 'filevalues'.
-display dictionary / var = k !items.
+display dictionary / var = k !fitems.
 omsend tag= ['filevars' 'filevalues'].
 
 * Eliminates assignment as missing values.
-missing values !items ().
+missing values !fitems ().
 
 * For QC, show frequencies of classvars and byvar.
 * Recode to numbers so they can later be merged. Allows for using STRING class and by vars.
@@ -197,7 +215,7 @@ autorecode !allcv / into !allcv2.
 !ifend
 
 !if (!scale !eq !null) !then
-recode !items (sysmis = -999)
+recode !fitems (sysmis = -999)
        !if (!NotAdmin !ne !null) !then !do !nad !in(!NotAdmin) (!nad = -999) !doend !ifend
        (else = copy).
 !ifend
@@ -208,16 +226,16 @@ echo "Recoding the items...".
 echo "* * *".
 
 * create target variables.
-numeric !do !i !in (!items) !concat(!i,"_s") !doend (f2.0).
-numeric !do !i !in (!items) !concat(!i,"_p") !doend (f4.2).
+numeric !do !i !in (!fitems) !concat(!i,"_s") !doend (f2.0).
+numeric !do !i !in (!fitems) !concat(!i,"_p") !doend (f4.2).
 
 * Recode items (correct/incorrect), calculate p+ and compute SumScr using p+. 
-!let !itmlist = !items
-!let !keylist = !keys
-!let !scrlist = !maxscrs
-!let !revlist = !reverse
+!let !itmlist = !fitems
+!let !keylist = !fkeys
+!let !scrlist = !fmaxscrs
+!let !revlist = !freverse
 
-!do !i !in (!items)
+!do !i !in (!fitems)
 !let !item   = !upcase(!head(!itmlist))
 !let !key    = !upcase(!head(!keylist))
 !let !maxscr = !head(!scrlist)
@@ -272,7 +290,7 @@ compute !concat(!item,"_p") = !concat(!item,"_s") / 1.
 !let !revlist = !tail(!revlist)
 !doend
 !else
-!do !item !in (!items)
+!do !item !in (!fitems)
 recode !item
        !if (!Omit     !ne !null) !then !do !omi !in(!Omit)     (!omi = !OmitAs)     !doend !ifend
        !if (!NotReach !ne !null) !then !do !nre !in(!NotReach) (!nre = !NotReachAs) !doend !ifend
@@ -284,7 +302,7 @@ compute !concat(!item,"_p") = !concat(!item,"_s").
 
 * This computes the number of items.
 !let !nitems  = !null
-!do !i !in (!items)
+!do !i !in (!fitems)
 !let !nitems = !concat(!nitems,i)
 !doend
 !let !nitems = !length(!nitems)
@@ -293,18 +311,24 @@ compute !concat(!item,"_p") = !concat(!item,"_s").
 echo "* * *".
 echo "Check recoding of the items.".
 echo "* * *".
-!do !i !in(!items)
+recode       !do !i !in(!fitems) !i !concat(!i,"_s") !concat(!i,"_p") !doend (sysmis = -999) (else = copy) .
+add value labels !do !i !in(!fitems) !i !concat(!i,"_s") !concat(!i,"_p") !doend -999 "Not Administered".
+!do !i !in(!fitems)
 cross table = !concat(!i,"_s") !concat(!i,"_p") by !i / missing = include.
 !doend
+recode !do !i !in(!fitems) !concat(!i,"_s") !concat(!i,"_p") !doend (-999 = sysmis) (else = copy).
 !ifend
 
+
 title "Check min/max for all items overall".
-desc var = !do !i !in(!items) !concat(!i,"_p") !doend.
+!if (!scale !ne !null) !then 
+desc var = !do !i !in(!fitems) !concat(!i,"_p") !doend. 
+!ifend
 execute.
 OMS / SELECT TABLES / IF COMMANDS = ["Descriptives"] SUBTYPES = ["Descriptive Statistics"]
     / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Desc.sav")) viewer = yes
     / tag = 'descriptives'.
-desc var = !do !i !in(!items) !concat(!i,"_s") !doend.
+desc var = !do !i !in(!fitems) !concat(!i,"_s") !doend.
 omsend tag = ['descriptives'].
 
 !if (!scale !ne !null) !then
@@ -313,7 +337,7 @@ compute !concat(!scale,"_use") = 1.
 format !concat(!scale,"_taken") (f3.0) !concat(!scale,"_use") (f1.0).
 if (!concat(!scale,"_taken") < !if (!atleast !ne !null) !then !atleast !else 1 !ifend ) !concat(!scale,"_use") = 0.
 
-* check response quality.
+* Check response quality.
 numeric !concat(!scale,"_RespType") (f2.0).
 do if (!concat(!scale,"_taken")) = 0.
 compute !concat(!scale,"_RespType") = 0.
@@ -329,7 +353,7 @@ end if.
 value labels !concat(!scale,"_RespType") 0 "No valid responses"
                                          1 !quote(!concat("Fewer than ",!atleast," responses"))
                                          2 "All responses the same"
-                                         3 "Other".
+                                         3 "Not Flagged".
 set tnumbers = labels.
 !if (!byvars = !null) !then
 freq var = !concat(!scale,"_RespType").
@@ -347,8 +371,8 @@ echo "* * *".
 crosstabs table = !concat(!scale,"_taken") by !concat(!scale,"_use").
 
 do if !concat(!scale,"_use") = 1.
-compute !concat(!scale,"_sumscr") = sum(!do !i !in(!items) !concat(!i,"_s"), !doend k ) - 1.
-compute !concat(!scale,"_pplus") = (sum(!do !i !in(!items) !concat(!i,"_p"), !doend k ) - 1) / !concat(!scale,"_taken").
+compute !concat(!scale,"_sumscr") = sum(!do !i !in(!fitems) !concat(!i,"_s"), !doend k ) - 1.
+compute !concat(!scale,"_pplus") = (sum(!do !i !in(!fitems) !concat(!i,"_p"), !doend k ) - 1) / !concat(!scale,"_taken").
 end if.
 
 format !concat(!scale,"_sumscr") (f4.0).
@@ -363,6 +387,12 @@ echo "* * *".
 echo "Frequency distribution for the sum score and p-plus score.".
 echo "* * *".
 freq var = !concat(!scale,"_sumscr") !concat(!scale,"_pplusRND") / histogram = normal.
+!if (!byvars !ne !null) !then
+examine !concat(!scale,"_sumscr") !concat(!scale,"_pplus") by !byvars
+ / nototal
+ / plot = boxplot
+ / statistics = none.
+!ifend
 !ifend
 
 * Save a file with CTT scores and scored items.
@@ -375,14 +405,14 @@ get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav"))
     / keep = item Var_Label.
 alter type item(a32) Var_Label (a128).
 compute Item = upcase(item).
-recode Var_Label ("<none>" = "<none provided>") (else = copy).
+recode Var_Label ("<none>" = "<no label provided>") (else = copy).
 
 * Add KEY and REV info to the file.
 string Reverse (a2).
-!let !itmlist = !items
-!let !keylist = !keys
-!let !scrlist = !maxscrs
-!let !revlist = !reverse
+!let !itmlist = !fitems
+!let !keylist = !fkeys
+!let !scrlist = !fmaxscrs
+!let !revlist = !freverse
 
 !do !ISeq = 1 !to !nitems
 !let !item   = !upcase(!head(!itmlist))
@@ -422,7 +452,7 @@ alter type item(a32) Val_Label(a64).
 sort cases by Item Response.
 save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav")).
 
-* this is where the IRT portion starts.
+* This is where the IRT portion starts.
 !let !IRTScore = !null
 !if (!upcase(!DoIRT)=Y !and (!scale !ne !null)) !then
 
@@ -431,7 +461,7 @@ get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
 * This computes the maximum number of steps across all items.
 * Used to read in IRT item parameters from TAM.
 !let !maxscr = 1
-!do !nc !in(!maxscrs)
+!do !nc !in(!fmaxscrs)
 !if (!nc !gt !maxscr) !then 
 !let !maxscr = !nc 
 !ifend
@@ -448,7 +478,7 @@ echo "* * *".
 * This section is to downcode scored responses for IRT processing with TAM.
 * Downcoded responses are only saved for use by TAM.
 !if (!upcase(!downcode) = Y) !then
-!do !i !in(!items)
+!do !i !in(!fitems)
 compute !concat(!i,"_s") = !concat(!i,"_s") - 1.
 !doend
 !ifend
@@ -470,10 +500,10 @@ select if (!concat(!scale,"_use") = 1).
 save translate
   / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,"_Responses.csv"))
   / replace  / type = csv
-  / keep = !do !i !in(!items) !concat(!i,"_s") !doend
+  / keep = !do !i !in(!fitems) !concat(!i,"_s") !doend
            CaseSeq pwgt !wgt !idvars !classvars !byvars !allcv2
            !concat(!scale,"_sumscr",!blank(1),!scale,"_pplus",!blank(1),!scale,"_taken")
-  / rename = (!do !i !in(!items) !concat(!i,"_s") !doend = !do !i !in(!items) !i !doend)
+  / rename = (!do !i !in(!fitems) !concat(!i,"_s") !doend = !do !i !in(!fitems) !i !doend)
   / fieldnames / encoding = 'LOCALE'.
 execute.
 
@@ -526,12 +556,12 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R"))
   !if (!upcase(!IrtModel) = "1PL") !then
   // '# run 1 pl model'
   / !quote(!concat(!scale,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM",', !Y, ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=.001, conv=.001, convM=.001, maxiter=',!maxiter,'))'))
+  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD= ', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
   !ifend
   !if (!upcase(!IrtModel) = "2PL") !then
   // '# run 2 pl model'
   / !quote(!concat(!scale,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM",', !Y, ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=.001, conv=.001, convM=.001, maxiter=',!maxiter,'))'))
+  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
   !ifend
   // '# write item parameters to a csv file'
   / !quote(!concat('write.csv(',!scale,'$item_irt,"',!outfile,'_IRTstats.csv", row.names = FALSE)'))
@@ -551,11 +581,11 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R"))
   // !quote(!concat('#run the analysis using grouping variable ',!g))
   !if (!upcase(!IrtModel) = "1PL") !then
   / !quote(!concat(!scale,'_',!g,'     <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM" , group = responses$', !g, '_n, ', ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=.001, conv=.001, convM=.001, maxiter=',!maxiter,'))'))
+  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
   !ifend
   !if (!upcase(!IrtModel) = "2PL") !then
   / !quote(!concat(!scale,'_',!g,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM", group = responses$', !g, '_n, ', ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=.001, conv=.001, convM=.001, maxiter=',!maxiter,'))'))
+  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
   !ifend
   /
   / '#write item parameters'
@@ -748,7 +778,9 @@ freq var = !critvar
   / format = limit(10)
   / histogram = normal
   / statistics = mean stddev min max .
-corr var = !critvar with !concat(!scale,"_sumscr",!blank(1),!scale,"_pplus") !IRTscore.
+!if (!scale !ne !null) !then 
+corr var = !critvar with !concat(!scale,"_sumscr",!blank(1),!scale,"_pplus") !IRTscore. 
+!ifend
 weight off.
 !ifend
 
@@ -762,28 +794,28 @@ factor var = !concat(!firstitem,"_s") to !concat(!lastitem,"_s")
  / missing = pairwise
  / extraction = !fextract
  / rotation = !frotate.
-echo "* * * FA Excluding Straightline Responses * * *". 
-select if !concat(!scale,"_RespType") <> 2.
-factor var = !concat(!firstitem,"_s") to !concat(!lastitem,"_s")
- / missing = pairwise
- / extraction = !fextract
- / rotation = !frotate.
+*echo "* * * FA Excluding Straightline Responses * * *". 
+*select if !concat(!scale,"_RespType") <> 2.
+*factor var = !concat(!firstitem,"_s") to !concat(!lastitem,"_s")
+* / missing = pairwise
+* / extraction = !fextract
+* / rotation = !frotate.
 weight off.
 !ifend
 
 * here begins the processing by byvar.
 
-!if (!byvars !eq !null) !then 
+!if (!byvars !eq !null) !then
 !let !bvrs = nobyvar
 !ifend
 
 !if (!byvars !ne !null) !then 
 
 !if (!upcase(!nullbyvar) !eq Y) !then
-!let !bvrs = !concat(nullbyvar,!blank(1),!byvars)
+!let !bvrs = !concat(nullbyvar,!blank(1),!upcase(!byvars))
 !ifend
 !if (!upcase(!nullbyvar) !eq N) !then
-!let !bvrs = !concat(!byvars)
+!let !bvrs = !concat(!upcase(!byvars))
 !ifend
 
 !ifend
@@ -809,7 +841,7 @@ get data / type = txt
 delete variables v1.
 compute item = upcase(item).
 sort cases by item !concat(!bv,"_n").
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_RMSDMD.sav"))
+save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_RMSDMD.sav")).
 execute.
 get data / type = txt
   / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_WRMSD.csv"))
@@ -821,20 +853,20 @@ get data / type = txt
   / variables   = item a32 WRMSD f13.7 .
 compute item = upcase(item).
 sort cases by item .
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_WRMSD.sav"))
+save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_WRMSD.sav")).
 execute.
 !ifend
 !ifend
 
 !let !allcvars  = !concat(!classvars,!blank(1),!bv)
 !let !allcvars2 = !null
-!do !cv !in(!allcvars)
+!do !cv !in(!upcase(!allcvars))
 !let !allcvars2 = !concat(!allcvars2,!blank(1),!cv,"_n")
 !doend
 
 * Count all the classification variables.
 !let !q = !NULL
-!do !i !in(!allcvars)
+!do !i !in(!upcase(!allcvars))
 !let !q = !concat(!q,"q")
 !doend
 !let !ncvar = !length(!q)
@@ -862,7 +894,7 @@ aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Gro
   / x = nu(k).
 weight off.
 
-!do !crv !in (!critvars)
+!do !crv !in(!critvars)
 compute !concat(w,!crv)    = !wgt * !crv.
 compute !concat(w,!crv,Sq) = !wgt * !crv**2.
 !doend
@@ -885,8 +917,8 @@ set tnumbers = values.
 
 weight off.
 split file by k !allcvars2.
-mean tables = k !wgt !do !crv !in (!critvars) !concat(w,!crv," ",w,!crv,Sq) !doend
-  by !do !i !in(!items) !i !doend
+mean tables = k !wgt !do !crv !in(!critvars) !concat(w,!crv," ",w,!crv,Sq) !doend
+  by !do !i !in(!fitems) !i !doend
   / cells = sum.
 split file off.
 omsend tag=['means1' 'means2'].
@@ -912,12 +944,12 @@ echo "* * *".
 
 split file by k !allcvars2.
 weight by !wgt.
-corr var = !do !i !in(!items) !concat(!i,"_s") !doend with !critvars
+corr var = !do !i !in(!fitems) !concat(!i,"_s") !doend with !critvars
   / statistics = descriptives / missing = pairwise.
 weight off.
 
 * This gets unweighted sample size, min and max per item.
-desc var = !do !i !in(!items) !concat(!i,"_s") !doend
+desc var = !do !i !in(!fitems) !concat(!i,"_s") !doend
   /  stats = default.
 split file off.
 
@@ -1019,10 +1051,8 @@ match files
 
 * select if ValidCases > 0.
 
-
 sort cases by item k !allcvars2.
 save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats_tmp.sav")).
-
 
 echo "* * *".
 echo "Secondary Processing of the Items".
@@ -1047,15 +1077,15 @@ delete variables !concat(var,!length(!concat(!q,"qqq"))) nresp command_ subtype_
 aggregate outfile = * mode = addvariables
   / break = k !allcvars2 item
   / t_SumWgt = sum(SumWgt)
- !do !crv !in (!critvars)
+ !do !crv !in(!critvars)
   / !concat(t_w,!crv," ",t_w,!crv,Sq)  = sum(!concat(w,!crv," ",w,!crv,Sq))
  !doend.
 
 do if (NCases > !BiserialN).
 !do !crv !in(!critvars)
-compute !concat(mn,!crv)   = !concat(w,!crv)   / SumWgt.
+compute !concat(mn_,!crv)   = !concat(w,!crv)   / SumWgt.
 compute !concat(t_mn,!crv) = !concat(t_w,!crv) / t_SumWgt.
-compute !concat(sd,!crv)   = sqrt(!concat(w,!crv,sq)  / SumWgt   - (!concat(w,!crv)  /SumWgt)**2).
+compute !concat(sd_,!crv)   = sqrt(!concat(w,!crv,sq)  / SumWgt   - (!concat(w,!crv)  /SumWgt)**2).
 compute !concat(t_sd,!crv) = sqrt(!concat(t_w,!crv,sq)/ t_SumWgt - (!concat(t_w,!crv)/t_SumWgt)**2).
 !doend
 end if.
@@ -1069,7 +1099,7 @@ do if (p > 0.01 and p < 0.99).
 compute z = probit(p).
 compute density = exp(-1/2 * z**2)/sqrt(2 * 3.14159265).
 !do !crv !in(!critvars)
-compute !concat(rpb_,!crv) = ((!concat(mn,!crv)-!concat(t_mn,!crv))/!concat(t_sd,!crv)) * sqrt(p/q).
+compute !concat(rpb_,!crv) = ((!concat(mn_,!crv)-!concat(t_mn,!crv))/!concat(t_sd,!crv)) * sqrt(p/q).
 compute !concat(rbi_,!crv) = !concat(rpb_,!crv) * sqrt(p*q) / density.
 !doend
 end if.
@@ -1080,17 +1110,9 @@ match files
  / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav"))
    / by item.
 
-compute IsKey = 0.
-do if (key < 0).
-compute IsKey = 1.
-else if (key = Response).
-compute IsKey = 1.
-end if.
-string Criteria (a32).
-compute Criteria = !quote(!critvar).
-format IsKey (f2.0) Response (f4.1).
-value labels Response.
-variable label Response "Response Category".
+**.
+
+**.
 
 * Merge with correlations.
 
@@ -1100,6 +1122,23 @@ match file
  / file = *
  / table = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats_tmp.sav"))
    / by item k !allcvars2.
+
+**.
+compute IsKey = 0.
+do if (key > 0 and response = key).
+compute IsKey = 1.
+else if (reverse = 'N' and key < 0 and response = ItemMax).
+compute IsKey = 1.
+else if (reverse = 'Y' and key < 0 and response = ItemMin).
+compute IsKey = 1.
+end if.
+
+string Criteria (a32).
+compute Criteria = !quote(!critvar).
+format IsKey (f2.0) Response (f4.1).
+value labels Response.
+variable label Response "Response Category".
+**.
 
 format PPlus !do !crv !in(!critvars) !concat(CorrW_,!crv) !doend (f5.2).
 
@@ -1112,11 +1151,13 @@ match files
     / drop = z density t_SumWgt
          !do !crv !in(!critvars)
             !concat(w,!crv)    !concat(t_w,!crv)
-            !concat(mn,!crv)   !concat(t_mn,!crv)
-            !concat(sd,!crv)   !concat(t_sd,!crv)
+                               !concat(t_mn,!crv)
+            !concat(sd_,!crv)  !concat(t_sd,!crv)
             !concat(w,!crv,Sq) !concat(t_w,!crv,Sq)
          !doend
      / by item .
+
+* !concat(mn_,!crv).
 
 match files
  / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav"))
@@ -1136,11 +1177,12 @@ compute indir    = !quote(!unquote(!indir)).
 compute infile   = !quote(!infile).
 compute selcrit  = !quote(!selcrit).
 
-var label response "Response Option"
+var label response "Response Category"
   !do !crv !in(!critvars)
     !concat(CorrW_,!crv) !quote(!concat("Correlation with ",!crv))
     !concat(rbi_,!crv)   !quote(!concat("Biserial (",!crv,")"))
     !concat(rpb_,!crv)   !quote(!concat("Point Biserial (",!crv,")"))
+    !concat(mn_,!crv)     !quote(!concat("Average (",!crv,")"))
   !doend.
 
 !if (!upcase(!doirt) = Y !and !scale !ne !null !and !bv !ne !null) !then
@@ -1323,8 +1365,8 @@ weight by !wgt.
 !do !cv !in(!critvars)
 aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav"))
   / break = !bv !concat(!cv,"_Level") !classvars
-  / !do !i !in(!items) !concat(!i,"_p") !doend
-     = mean(!do !i !in(!items) !concat(!i,"_p") !doend)
+  / !do !i !in(!fitems) !concat(!i,"_p") !doend
+     = mean(!do !i !in(!fitems) !concat(!i,"_p") !doend)
   / !concat(!cv,"_NCases")  = nu(!concat(!cv,"_Level"))
   / !concat(!cv,"_SumWgts") = sum(k).
 !doend
@@ -1332,7 +1374,7 @@ aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filet
 !do !cv !in(!critvars)
 get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav")).
 varstocases
- / make !concat(!cv,"_PPlus") from !do !i !in (!items) !concat(!i,"_p") !doend
+ / make !concat(!cv,"_PPlus") from !do !i !in (!fitems) !concat(!i,"_p") !doend
  / index = item (!concat(!cv,"_PPlus")) / null = keep.
 execute.
 sort cases by item.
@@ -1389,7 +1431,7 @@ sort cases by !classvars iseq item Var_Label key reverse.
 string stat2 (a64).
 variable labels stat2 'Statistic'.
 compute stat2 = upcase(stat).
-recode stat2 ('P_CHOOSING' = 'Proportion choosing option')
+recode stat2 ('P_CHOOSING' = 'Proportion in Response Category')
             !do !cv !in(!critvars)
               (!quote(!concat('RBI_',!upcase(!cv))) = !quote(!concat('R Biserial with ',!cv)) ) 
             !doend.
@@ -1432,6 +1474,11 @@ OMS
 !let !tablerbi = !concat("rbi_",!head(!critvar))
 !ifend
 
+* Shows Mean instead of RBI in the table output.
+!if (!upcase(!showmn) = Y) !then 
+!let !tablerbi = !concat("mn_",!substr(!tablerbi,5)) 
+!ifend
+
 * This is for when there are no classification variables.
 !if (!ncvar !eq 0) !then
 get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats.sav")).
@@ -1454,9 +1501,10 @@ CTABLES
           title   = 'Summary Item Statistics'
         !if (!upcase(!timestamp) !eq Y) !then
           caption = '  ' !quote(!concat('Created )DATE at )TIME (Source: ',!unquote(!indir),'\',!upcase(!infile),'.sav)'))
-        !ifend .
+        !ifend.
 
 * This is to display graphics.
+!if (!upcase(!DoGraphs) = Y) !then
 get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats4Graphs.sav")).
 select if (NCases >= !GraphN !do !crv !in(!critvars) and upcase(rtrim(stat)) ne !quote(!upcase(!concat(CorrW_,!crv))) !doend).
 
@@ -1465,7 +1513,7 @@ select if (char.index(upcase(stat),"PPLUS") = 0).
 !ifend
 
 split file by !classvars ISeq ItemID.
-graph / title "Proportion Choosing and Biserial Correlations by Response Option"
+graph / title "Proportions and Biserial Correlations by Response Category"
         !if (!upcase(!timestamp) !eq Y) !then
       / footnote =  !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
         !ifend
@@ -1473,10 +1521,11 @@ graph / title "Proportion Choosing and Biserial Correlations by Response Option"
       / panel colvar=stat2 .
 split file off.
 !ifend
+!ifend
 
 * This is for when there are one or more classification variables.
 !if (!ncvar !gt 0) !then
-!let !keylist = !keys
+!let !keylist = !fkeys
 !do !i = 1 !to !nitems.
 !let !key = !head(!keylist)
 *echo !quote(!concat('Keys is ',!key)).
@@ -1492,7 +1541,7 @@ CTABLES
   / vlabels variables = !allcvars display=name
   / vlabels variables = response !tablerbi display=label
   / vlabels variables = !do !crv !in(!critvars) !concat(CorrW_,!crv) !doend display=label
-  / TABLE !head(!allcvars) !do !v !in (!tail(!allcvars)) > !v [c] !doend
+  / TABLE !head(!allcvars) !do !v !in(!tail(!allcvars)) > !v [c] !doend
          by NCases [sum] + PPlus [mean] + !if (!bv !ne !null !and !upcase(!doirt) = Y !and !scale !ne !null) !then RMSD [mean] + MD [mean] + !ifend
               !do !crv !in(!critvars) !concat(CorrW_,!crv) [mean] + !doend Response [c]> p [mean] + Response [c]
          > !tablerbi [mean]
@@ -1512,6 +1561,7 @@ CTABLES
 split file off.
 
 * This is to display graphics.
+!if (!upcase(!DoGraphs) = Y) !then
 get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats4Graphs.sav")).
 select if (ISeq = !i).
 select if (NCases >= !GraphN !do !crv !in(!critvars) and upcase(rtrim(stat)) ne !quote(!upcase(!concat(CorrW_,!crv))) !doend).
@@ -1522,7 +1572,7 @@ select if (char.index(upcase(stat),"PPLUS") = 0).
 
 split file by !classvars iseq ItemID.
 !if (!bv !ne !null) !then
-graph  / title = "Proportion Choosing and Biserial Correlations by Response Option"
+graph  / title = "Proportions and Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
        / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
          !ifend
@@ -1530,7 +1580,7 @@ graph  / title = "Proportion Choosing and Biserial Correlations by Response Opti
        / panel colvar=stat2.
 !if (!upcase(!key) !ne D) !then
 select if (char.index(upcase(stat),"CHOOSING") = 0).
-graph  / title = "Biserial Correlations by Response Option"
+graph  / title = "Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
        / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
          !ifend
@@ -1538,7 +1588,7 @@ graph  / title = "Biserial Correlations by Response Option"
        / panel colvar=stat2 .
 !ifend
 !else
-graph  / title = "Proportion Choosing and Biserial Correlations by Response Option"
+graph  / title = "Proportions and Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
        / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
          !ifend
@@ -1546,7 +1596,7 @@ graph  / title = "Proportion Choosing and Biserial Correlations by Response Opti
        / panel colvar=stat2.
 !if (!upcase(!key) !ne D) !then
 select if (char.index(upcase(stat),"CHOOSING") = 0).
-graph  / title = "Biserial Correlations by Response Option"
+graph  / title = "Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
        / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
          !ifend
@@ -1555,6 +1605,7 @@ graph  / title = "Biserial Correlations by Response Option"
 !ifend
 !ifend
 split file off.
+!ifend
 
 * This is to display DIF results.
 !if (!upcase(!DoDIF) = Y !and !bv !ne !null) !then
@@ -1662,5 +1713,72 @@ echo "Processing is completed. Please review the output.".
 echo "* * *".
 
 restore.
+
+omsend tag = ALL.
+
+!enddefine.
+
+*******************************************.
+* macro to get item information           *.
+*******************************************.
+define !getitems ( idir         = !charend('/') /
+                   ifile        = !charend('/') /
+                   odir         = !charend('/') /
+                   clean        = !charend('/') !default(Y)).
+
+* when specified, read file with item information.
+get data
+ / type = xlsx
+ / file = !quote(!concat(!unquote(!idir),"\",!unquote(!ifile),".xlsx"))
+ / datatypemin percentage = 100.
+
+select if (items <> "").
+alter type keys reverse maxscrs exclude (a1).
+compute iseq = $casenum.
+format iseq (f3.0).
+recode keys    ("" = "X") (else = copy).
+recode reverse ("" = "N") (else = copy).
+recode maxscrs ("" = "1") (else = copy).
+save translate
+  / outfile= !quote(!concat(!unquote(!odir),"\",!ifile,"_ItemList.csv"))
+  / replace  / type = csv
+  / keep = Items Keys Reverse MaxScrs Exclude
+  / fieldnames / encoding = 'LOCALE'.
+execute.
+select if (upcase(exclude) <> "Y" and exclude <> "1").
+compute k = 1.
+match files
+ / file = * / first = fitem / last = litem
+ / by k.
+string front back (a15).
+if (fitem = 1) front = 'define !ix () '.
+if (fitem <>1) front = '              '.
+if (litem <>1) back  = '              '.
+if (litem = 1) back  = '   !enddefine.'.
+write outfile = !quote(!concat(!unquote(!odir),"\ix.tmp"))
+ / 1 front items back.
+if (fitem = 1) front = 'define !kx () '.
+write outfile = !quote(!concat(!unquote(!odir),"\kx.tmp"))
+ / 1 front keys back.
+if (fitem = 1) front = 'define !mx () '.
+write outfile = !quote(!concat(!unquote(!odir),"\mx.tmp"))
+ / 1 front maxscrs back.
+if (fitem = 1) front = 'define !rx () '.
+write outfile = !quote(!concat(!unquote(!odir),"\rx.tmp"))
+ / 1 front reverse back.
+execute.
+!onexpand.
+include file = !quote(!concat(!unquote(!odir),"\ix.tmp")).
+include file = !quote(!concat(!unquote(!odir),"\kx.tmp")).
+include file = !quote(!concat(!unquote(!odir),"\mx.tmp")).
+include file = !quote(!concat(!unquote(!odir),"\rx.tmp")).
+execute.
+
+!if (!upcase(!clean) = Y) !then
+erase file = !quote(!concat(!unquote(!odir),"\ix.tmp")).
+erase file = !quote(!concat(!unquote(!odir),"\kx.tmp")).
+erase file = !quote(!concat(!unquote(!odir),"\mx.tmp")).
+erase file = !quote(!concat(!unquote(!odir),"\rx.tmp")).
+!ifend
 
 !enddefine.
