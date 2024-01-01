@@ -10,6 +10,7 @@
 *.
 * For more information, please refer to the User Manual.
 *.
+
 define !IAPlus  (indir        = !charend('/')              /
                  infile       = !charend('/')              /
                  outdir       = !charend('/')              /
@@ -20,8 +21,7 @@ define !IAPlus  (indir        = !charend('/')              /
                  seed         = !charend('/') !default(random) /
                  scale        = !charend('/')              /
                  scalelbl     = !charend('/') !default('No label provided')  /
-                 ifile        = !charend('/') /
-                 sheet        = !charend('/') !default("") /
+                 ifile        = !charend('/')              /
                  items        = !charend('/')              /
                  keys         = !charend('/')              /
                  IsZero       = !charend('/') !default(" 0 thru  9") /
@@ -30,49 +30,50 @@ define !IAPlus  (indir        = !charend('/')              /
                  IsThree      = !charend('/') !default("30 thru 39") /
                  IsFour       = !charend('/') !default("40 thru 49") /
                  IsFive       = !charend('/') !default("50 thru 59") /
-                 maxscrs      = !charend('/')             /
-                 downcode     = !charend('/') !default(N) /
-                 reverse      = !charend('/')             /
-                 minrscore    = !charend('/') !default(1) /
-                 atleast      = !charend('/') !default(1) /
-                 Omit         = !charend('/')             /
+                 maxscrs      = !charend('/')              /
+                 downcode     = !charend('/') !default(N)  /
+                 reverse      = !charend('/')              /
+                 minrscore    = !charend('/') !default(1)  /
+                 atleast      = !charend('/') !default(1)  /
+                 Omit         = !charend('/')              /
                  OmitAs       = !charend('/') !default(sysmis) /
-                 NotReach     = !charend('/')             /
+                 NotReach     = !charend('/')              /
                  NotReachAs   = !charend('/') !default(sysmis) /
-                 OtherMis     = !charend('/')             /
+                 OtherMis     = !charend('/')              /
                  OtherMisAs   = !charend('/') !default(sysmis) /
-                 NotAdmin     = !charend('/')             /
-                 classvars    = !charend('/')             /
-                 byvars       = !charend('/')             /
-                 examinegrp   = !charend('/') !default(N) /
-                 NullByVar    = !charend('/') !default(N) /
-                 idvars       = !charend('/')             /
-                 keepvars     = !charend('/')             /
-                 CritVar      = !charend('/')             /
-                 UseSumScr    = !charend('/') !default(N) /
-                 wgtvar       = !charend('/')             /
-                 normwgt      = !charend('/') !default(N) /
-                 BiserialN    = !charend('/') !default(5) /
-                 DoDIF        = !charend('/') !default(Y) /
-                 nLevels      = !charend('/') !default(6) /
-                 IRTCuts      = !charend('/')             /
-                 qcscoring    = !charend('/') !default(Y) /
-                 ChkStrtLn    = !charend('/') !default(N) /
-                 ChkCriteria  = !charend('/') !default(Y) /
-                 factor       = !charend('/') !default(N) /
-                 fextract     = !charend('/') !default(PC)/
+                 NotAdmin     = !charend('/')              /
+                 classvars    = !charend('/')              /
+                 byvars       = !charend('/')              /
+                 examinegrp   = !charend('/') !default(N)  /
+                 NullByVar    = !charend('/') !default(N)  /
+                 idvars       = !charend('/')              /
+                 keepvars     = !charend('/')              /
+                 CritVar      = !charend('/')              /
+                 UseSumScr    = !charend('/') !default(N)  /
+                 wgtvar       = !charend('/')              /
+                 normwgt      = !charend('/') !default(N)  /
+                 BiserialN    = !charend('/') !default(5)  /
+                 DoDIF        = !charend('/') !default(Y)  /
+                 nLevels      = !charend('/') !default(6)  /
+                 IRTCuts      = !charend('/')              /
+                 qcscoring    = !charend('/') !default(Y)  /
+                 ChkStrtLn    = !charend('/') !default(N)  /
+                 ChkCriteria  = !charend('/') !default(Y)  /
+                 factor       = !charend('/') !default(N)  /
+                 fextract     = !charend('/') !default(PC) /
                  frotate      = !charend('/') !default(VARIMAX) /
-                 timestamp    = !charend('/') !default(Y) /
-                 sourcestamp  = !charend('/') !default(Y) /
-                 dotables     = !charend('/') !default(Y) /
-                 dographs     = !charend('/') !default(Y) /
-                 showmn       = !charend('/') !default(N) /
-                 graphn       = !charend('/') !default(10)/ 
-                 viewcod      = !charend('/') !default(N) /
-                 clean        = !charend('/') !default(Y) /
-                 DoHTML       = !charend('/') !default(N) /
-                 DoXLSX       = !charend('/') !default(N) /
-                 DoIRT        = !charend('/') !default(N) /
+                 timestamp    = !charend('/') !default(Y)  /
+                 sourcestamp  = !charend('/') !default(Y)  /
+                 dotables     = !charend('/') !default(Y)  /
+                 dographs     = !charend('/') !default(Y)  /
+                 showmn       = !charend('/') !default(N)  /
+                 graphn       = !charend('/') !default(10) / 
+                 viewcod      = !charend('/') !default(N)  /
+                 clean        = !charend('/') !default(Y)  /
+                 DoHTML       = !charend('/') !default(N)  /
+                 DoXLSX       = !charend('/') !default(N)  /
+                 DoIRT        = !charend('/') !default(N)  /
+                 Anchors      = !charend('/')              /
                  Converge     = !charend('/') !default(0.005)  /
                  Maxiter      = !charend('/') !default(1000)   /
                  IrtModel     = !charend('/') !default('1PL')  /
@@ -81,7 +82,7 @@ define !IAPlus  (indir        = !charend('/')              /
                  SampRegr     = !charend('/') !default(FALSE)  /
                  ScoreType    = !charend('/') !default(WLE)    /
                  CtrDiff      = !charend('/') !default(Y)      /
-                 WhereIsR     = !charend('/') !default("C:\Program Files\R\R-4.1.2\bin") /
+                 WhereIsR     = !charend('/') !default("C:\Program Files\R\R-4.3.1\bin") /
                  SaveRData    = !charend('/') !default(N)      ).
 
 dataset close all.
@@ -125,72 +126,8 @@ set onumbers=values ovars=names tnumbers=LABELS tvars=names.
 !let !allcv2 = !concat(!allcv2,!blank(1),!upcase(!cv),"_n")
 !doend
 
-
-
-
-
-!if (!ifile !ne !null) !then
-* when specified, read file with item information.
-get data
- / type = xlsx
- / file = !quote(!concat(!unquote(!indir),"\",!unquote(!ifile),".xlsx"))
-  !if (!sheet !ne !null) !then / sheet = name !quote(!sheet) !ifend
- / datatypemin percentage = 100.
-
-select if (items <> "").
-alter type keys reverse maxscrs exclude (a1).
-compute iseq = $casenum.
-format iseq (f3.0).
-recode keys    ("" = "X") (else = copy).
-recode reverse ("" = "N") (else = copy).
-recode maxscrs ("" = "1") (else = copy).
-save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!ifile,"_",!sheet,"_ItemList.csv"))
-  / replace  / type = csv
-  / keep = Items Keys Reverse MaxScrs Exclude
-  / fieldnames / encoding = 'LOCALE'.
-execute.
-select if (upcase(exclude) <> "Y" and exclude <> "1").
-compute k = 1.
-match files
- / file = * / first = fitem / last = litem
- / by k.
-string front back (a15).
-if (fitem = 1) front = concat('define !','ix () ').
-if (fitem <>1) front = '              '.
-if (litem <>1) back  = '              '.
-if (litem = 1) back  = '   !enddefine.'.
-write outfile = !quote(!concat(!unquote(!outdir),"\ix.tmp"))
- / 1 front items back.
-if (fitem = 1) front = concat('define !','kx () ').
-write outfile = !quote(!concat(!unquote(!outdir),"\kx.tmp"))
- / 1 front keys back.
-if (fitem = 1) front = concat('define !','mx () ').
-write outfile = !quote(!concat(!unquote(!outdir),"\mx.tmp"))
- / 1 front maxscrs back.
-if (fitem = 1) front = concat('define !','rx () ').
-write outfile = !quote(!concat(!unquote(!outdir),"\rx.tmp"))
- / 1 front reverse back.
-execute.
-!onexpand.
-include file = !quote(!concat(!unquote(!outdir),"\ix.tmp")).
-include file = !quote(!concat(!unquote(!outdir),"\kx.tmp")).
-include file = !quote(!concat(!unquote(!outdir),"\mx.tmp")).
-include file = !quote(!concat(!unquote(!outdir),"\rx.tmp")).
-execute.
-
-!if (!upcase(!clean) = Y) !then
-erase file = !quote(!concat(!unquote(!outdir),"\ix.tmp")).
-erase file = !quote(!concat(!unquote(!outdir),"\kx.tmp")).
-erase file = !quote(!concat(!unquote(!outdir),"\mx.tmp")).
-erase file = !quote(!concat(!unquote(!outdir),"\rx.tmp")).
-!ifend
-!ifend
-
-
-
 * assign item info to the parameters.
-!if (!ifile !ne !null) !then
+!if (!upcase(!ifile) !eq Y) !then
 !let !fitems   = !upcase(!eval(!ix))
 !let !fkeys    = !upcase(!eval(!kx))
 !let !fmaxscrs = !eval(!mx)
@@ -602,6 +539,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / 'library("TAM")'
   // '# set working directory and delete existing files'
   / 'setwd("' wd '")'
+  /
   / !quote(!concat('if (file.exists("',!outfile,'_PersonScores.csv")) {file.remove("',!outfile,'_PersonScores.csv")}'))
   / !quote(!concat('if (file.exists("',!outfile,'_IRTStats.csv")) {file.remove("',!outfile,'_IRTStats.csv")}'))
   / !quote(!concat('if (file.exists("',!outfile,'.RData")) {file.remove("',!outfile,'.RData")}'))
@@ -610,6 +548,14 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   !if (!regressors !ne !null) !then
   / !quote(!concat('regressors <- read.csv("',!outfile,'_regressors.csv")'))
   !ifend
+  
+  !if (!anchors !ne !null) !then
+  / !quote(!concat('xsi.anchors <- readRDS(file="',!anchors,'$xsi.fixed.estimated")'))
+   !if (!upcase(!irtmodel) !eq "2PL") !then
+  / !quote(!concat('B.anchors <- readRDS(file="',!anchors,'$B.fixed.estimated")'))
+   !ifend
+  !ifend
+  
   // '# checks for all NA and constant responses and eliminate these items'
   / !quote(!concat('WhichAreNA <- sapply(X = responses[1:',!nitems,'], FUN = function(i) {all(is.na(i))})'))
   / 'AreNotNA <- names(Filter(isFALSE, WhichAreNA))'
@@ -617,45 +563,80 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / 'UseTheseItems <- names(ColVariance[ColVariance > 0])'
   // 'message("\nThese items were taken out because of NO responses.")'
   / 'print(names(Filter(isTRUE,WhichAreNA)))'
+  // 'message("\nEnd of the list.")'
   // 'message("\nThese items were taken out because of NO variance.")'
   / 'print(names(ColVariance[ColVariance == 0]))'
+  // 'message("\nEnd of the list.")'
   !if (!upcase(!seed) !ne RANDOM) !then
   // !quote(!concat("set.seed(",!seed,")"))
   !ifend
+
   !if (!upcase(!IrtModel) = "1PL") !then
   // '# run 1 pl model'
-  / !quote(!concat(!scale,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM",', !Y, ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD= ', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
+  / !quote(!concat(!scale,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM",',!Y))
+   !if (!anchors !ne !null) !then
+  / !quote('   xsi.fixed = xsi.anchors, ')
+   !ifend  
   !ifend
+
   !if (!upcase(!IrtModel) = "2PL") !then
   // '# run 2 pl model'
-  / !quote(!concat(!scale,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM",', !Y, ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
+  / !quote(!concat(!scale,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM",', !Y))
+   !if (!anchors !ne !null) !then
+  / !quote('   xsi.fixed = xsi.anchors, B.fixed=B.anchors,')
+   !ifend  
   !ifend
+
+  / !quote('   pweights=responses$pwgt, pid=responses$CaseSeq,')
+  / !quote(!concat('   control=list(nodes=seq(-4, 4, len=41), convD= ', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
+
   // '# write item parameters to a csv file'
   / !quote(!concat('write.csv(',!scale,'$item_irt,"',!outfile,'_IRTstats.csv", row.names = FALSE)'))
+
   // '# calculate wle and person fit'
   / !quote(!concat('abilities<- tam.wle(',!scale,')'))
   / !quote(!concat('pfit<-tam.personfit(',!scale,')'))
   / !quote(!concat('personstats<-cbind(',!scale,'$person, abilities[5:6], pfit)'))
+
+  // '# calculate item fit statistics'
+  / !quote(!concat('ItemFit <- IRT.itemfit(',!scale,')'))
+  / !quote(!concat('ItemFit2<- msq.itemfit(',!scale,')'))
+  / !quote(!concat('ItemFitStats <- cbind(ItemFit$MD[,1:2],ItemFit$RMSD[,2],ItemFit$RMSD_bc[,2],ItemFit$MAD[,2],ItemFit$chisquare_stat[,2],ItemFit2$itemfit[,3:8])'))
+  / !quote(!concat('colnames(ItemFitStats)<-c("Item", "MD", "RMSD", "RMSD_bc", "MAD","chisquare","Outfit","Outfit_t","Outfit_p","Infit","Infit_t","Infit_p")'))
+  / !quote(!concat('write.csv(ItemFitStats,"',!outfile,'_ItemFitStats.csv", row.names = FALSE)'))
+
   !if (!regressors !ne !null) !then
   // '# write out gammas and compute PVs'
   / !quote(!concat('write.csv(',!scale,'$beta,"',!outfile,'_Gammas.csv", row.names = FALSE)'))
   / !quote(!concat('pvs<- tam.pv(',!scale,', nplausible = ', !npvs, ', samp.regr= ',!upcase(!sampregr),', normal.approx = TRUE, ntheta = 200)'))
   / !quote(!concat('personstats<-cbind(personstats,pvs$pv[,-1])'))
   !ifend
+
   // '# write out person statistics'
   / !quote(!concat('write.csv(personstats,"',!outfile,'_PersonScores.csv", row.names = FALSE)'))
+
   !do !g !in (!upcase(!byvars))
   // !quote(!concat('#run the analysis using grouping variable ',!g))
+  
   !if (!upcase(!IrtModel) = "1PL") !then
-  / !quote(!concat(!scale,'_',!g,'     <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM" , group = responses$', !g, '_n, ', ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
+  / !quote(!concat(!scale,'_',!g,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM" , group = responses$', !g, '_n, '))
+   !if (!anchors !eq !null) !then 
+  / !quote(!concat('  xsi.init =', !scale, '$xsi.fixed.estimated,'))
+   !else
+  / !quote('   xsi.fixed = xsi.anchors,')
+   !ifend 
   !ifend
+
   !if (!upcase(!IrtModel) = "2PL") !then
-  / !quote(!concat(!scale,'_',!g,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM", group = responses$', !g, '_n, ', ' pweights=responses$pwgt,'))
-  / !quote(!concat('     pid=responses$CaseSeq,control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
+  / !quote(!concat(!scale,'_',!g,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM", group = responses$', !g, '_n, '))
+   !if (!anchors !eq !null) !then
+  / !quote(!concat('   xsi.init=', !scale, '$xsi.fixed.estimated, B=', !scale, '$B,'))
+   !else
+  / !quote('   xsi.fixed = xsi.anchors, B.fixed=B.anchors,')
+   !ifend
   !ifend
+  / !quote('   pweights=responses$pwgt, pid=responses$CaseSeq,')
+  / !quote(!concat('   control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
   /
   / '#write item parameters'
   / !quote(!concat('write.csv(',!scale,'_',!g,'$item_irt,"',!outfile,'_',!g,'_IRTstats.csv", row.names = FALSE)'))
@@ -666,43 +647,15 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / '#count cases by group'
   / !quote(!concat('Nof',!g,' <- aggregate(responses$',!g,',list(responses$',!g,'_n, responses$',!g,'),FUN = length)'))
   /
-  / '# transform RMSD table'
-  / !quote(!concat('# RMSD_',!g,'<- ItemFit_',!g,'$RMSD'))
-  / !quote(!concat('# RMSD_',!g,'<- lapply(names(RMSD_',!g,'[2:ncol(RMSD_',!g,')]), function(i) {'))
-  / !quote(!concat('# tmp <- data.frame(cbind(RMSD_',!g,'[[1]], i, RMSD_',!g,'[[i]]))'))
-  / !quote(!concat('# colnames(tmp) <- c(names(RMSD_',!g,')[1], "Group", "RMSD")'))            
-  / !quote(!concat('# return(tmp)'))
-  / '#  })'
-  / !quote(!concat('# RMSD_',!g,' <- do.call("rbind", RMSD_',!g,')'))
-  /
-  / !quote(!concat('# RMSD_',!g,'$item  <- substr(','RMSD_',!g,'$item,1,nchar(RMSD_',!g,'$item)-2)'))
-  / !quote(!concat('# RMSD_',!g,'$',!g,'_n <- as.numeric(substr(RMSD_',!g,'$Group,6,10))'))
-  / !quote(!concat('# RMSD_',!g,'$',!g,'<-Nof',!g,'[RMSD_',!g,'$',!g,'_n,2]'))
-  / !quote(!concat('# write.csv(RMSD_',!g,',"',!outfile,'_',!g,'_RMSD.csv", row.names = FALSE)'))
-  /
-  / '# transform MD table'
-  / !quote(!concat('# MD_',!g,'<- ItemFit_',!g,'$MD'))
-  / !quote(!concat('# MD_',!g,'<- lapply(names(MD_',!g,'[2:ncol(MD_',!g,')]), function(i) {'))
-  / !quote(!concat('# tmp <- data.frame(cbind(MD_',!g,'[[1]], i, MD_',!g,'[[i]]))'))
-  / !quote(!concat('# colnames(tmp) <- c(names(MD_',!g,')[1], "Group", "MD")'))            
-  / !quote(!concat('# return(tmp)'))
-  / '#  })'
-  / !quote(!concat('# MD_',!g,' <- do.call("rbind", MD_',!g,')'))
-  /
-  / !quote(!concat('# MD_',!g,'$item  <- substr(','MD_',!g,'$item,1,nchar(MD_',!g,'$item)-2)'))
-  / !quote(!concat('# MD_',!g,'$',!g,'_n<- as.numeric(substr(MD_',!g,'$Group,6,10))'))
-  / !quote(!concat('# MD_',!g,'$',!g,'<-Nof',!g,'[MD_',!g,'$',!g,'_n,2]'))
-  / !quote(!concat('# write.csv(MD_',!g,',"',!outfile,'_',!g,'_MD.csv", row.names = FALSE)'))
-  / 
   / '#combine RMSD and MD values'
-  / !quote(!concat('RMSDMD_',!g,'<-data.frame(matrix(ncol=5,nrow=0))'))
-  / !quote(!concat('for (i in 2:(ItemFit_',!g,'$G+1))'))
-  / !quote(!concat('  {y<-cbind(ItemFit_',!g,'$RMSD[,1],(i-1), Nof',!g,'[i-1,2],ItemFit_',!g,'$RMSD[,i],ItemFit_',!g,'$MD[,i])'))
-  / !quote(!concat('RMSDMD_',!g,'<-rbind(RMSDMD_',!g,',y)'))
+  / !quote(!concat('ItemFitStats_',!g,'<-data.frame(matrix(ncol=8,nrow=0))'))
+  / !quote(!concat('for (i in 1:(ItemFit_',!g,'$G))'))
+  / !quote(!concat('  {y<-cbind(ItemFit_',!g,'$RMSD[,1],(i), Nof',!g,'[i,2],ItemFit_',!g,'$RMSD[,i+1],ItemFit_',!g,'$MD[,i+1],ItemFit_',!g,'$RMSD_bc[,i+1],ItemFit_',!g,'$MAD[,i+1],ItemFit_',!g,'$chisquare_stat[,i+1])'))
+  / !quote(!concat('ItemFitStats_',!g,'<-rbind(ItemFitStats_',!g,',y)'))
   / '  }'
-  / !quote(!concat('colnames(RMSDMD_',!g,')<-c("Item","',!g,'_n","',!g,'","RMSD","MD")'))
+  / !quote(!concat('colnames(ItemFitStats_',!g,')<-c("Item","',!g,'_n","',!g,'","RMSD","MD","RMSD_bc","MAD","chisquare")'))
   / !quote(!concat('WRMSD_',!g,'<- ItemFit_',!g,'$RMSD[,c(1,ncol(ItemFit_',!g,'$RMSD))]'))
-  / !quote(!concat('write.csv(RMSDMD_',!g,',"',!outfile,'_',!g,'_RMSDMD.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(ItemFitStats_',!g,',"',!outfile,'_',!g,'_ItemFitStats.csv", row.names = FALSE)'))
   / !quote(!concat('write.csv(WRMSD_',!g,',"',!outfile,'_',!g,'_WRMSD.csv", row.names = FALSE)'))
   /
   / '# write person scores'
@@ -712,7 +665,17 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   !if (!upcase(!SaveRData) = Y) !then
   /
   / '# save R environment if requested'
-  / !quote(!concat('save.image("',!outfile,'.RData")'))
+  / !quote(!concat('save.image("',!outfile,"_",!scale,'.RData")'))
+  / !quote(!concat('saveRDS(',!scale,'$xsi.fixed.estimated, file = "',!outfile,"_",!scale,'$xsi.fixed.estimated")'))
+     !do !g !in (!upcase(!byvars))
+  / !quote(!concat('saveRDS(',!scale,"_",!g,'$xsi.fixed.estimated, file = "',!outfile,"_",!scale,'_',!g,'$xsi.fixed.estimated")'))
+     !doend
+  !if (!upcase(!IrtModel) = "2PL") !then
+  / !quote(!concat('saveRDS(',!scale,'$B.fixed.estimated, file = "',!outfile,"_",!scale,'$B.fixed.estimated")'))
+     !do !g !in (!upcase(!byvars))
+  / !quote(!concat('saveRDS(',!scale,"_",!g,'$B.fixed.estimated, file = "',!outfile,"_",!scale,'_',!g,'$B.fixed.estimated")'))
+     !doend
+  !ifend
   !ifend
   /
   / '#exit program' 
@@ -1715,9 +1678,9 @@ echo "Erasing temporary files...".
 echo "* * *".
 
 !let !erasef = "ItemStats_tmp SumStats_tmp DescA DescB Desc2 DescA2 DescB2 Corr GroupValues GroupValues2 GroupValues3 GroupValues4 ResponseStats"
-!do !ef !in(!erasef)
+ !do !ef !in(!erasef)
 erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_",!ef,".sav")).
-!doend
+ !doend
 
 !if (!scale !ne !null) !then
 *erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Cronbach.sav")).
@@ -1794,11 +1757,20 @@ omsend tag = ALL.
 *******************************************.
 * macro to get item information           *.
 *******************************************.
-define !getitems ( idir         = !charend('/') /
+define !getifile ( idir         = !charend('/') /
                    ifile        = !charend('/') /
                    sheet        = !charend('/') !default("") /
                    odir         = !charend('/') /
-                   clean        = !charend('/') !default(Y)).
+                   clean        = !charend('/') !default(Y)  /
+                   viewcod      = !charend('/') !default(N)  ).
+
+preserve.
+* If viewcode is selected.
+!if (!upcase(!viewcod)=Y) !then
+set mprint=on  printback=on.
+!else
+set mprint=off printback=off.
+!ifend
 
 * when specified, read file with item information.
 get data
@@ -1826,19 +1798,19 @@ match files
  / file = * / first = fitem / last = litem
  / by k.
 string front back (a15).
-if (fitem = 1) front = 'define !ix () '.
+if (fitem = 1) front = concat('define !','ix () ').
 if (fitem <>1) front = '              '.
 if (litem <>1) back  = '              '.
-if (litem = 1) back  = '   !enddefine.'.
+if (litem = 1) back  = concat('   !','enddefine.').
 write outfile = !quote(!concat(!unquote(!odir),"\ix.tmp"))
  / 1 front items back.
-if (fitem = 1) front = 'define !kx () '.
+if (fitem = 1) front = concat('define !','kx () ').
 write outfile = !quote(!concat(!unquote(!odir),"\kx.tmp"))
  / 1 front keys back.
-if (fitem = 1) front = 'define !mx () '.
+if (fitem = 1) front = concat('define !','mx () ').
 write outfile = !quote(!concat(!unquote(!odir),"\mx.tmp"))
  / 1 front maxscrs back.
-if (fitem = 1) front = 'define !rx () '.
+if (fitem = 1) front = concat('define !','rx () ').
 write outfile = !quote(!concat(!unquote(!odir),"\rx.tmp"))
  / 1 front reverse back.
 execute.
@@ -1855,5 +1827,5 @@ erase file = !quote(!concat(!unquote(!odir),"\kx.tmp")).
 erase file = !quote(!concat(!unquote(!odir),"\mx.tmp")).
 erase file = !quote(!concat(!unquote(!odir),"\rx.tmp")).
 !ifend
-
+restore.
 !enddefine.
