@@ -250,9 +250,9 @@ recode !item (sysmis = -999)
 
 !if (!upcase(!key) !eq X !or !key !eq !null) !then
 recode !item
-       !if (!Omit     !ne !null) !then !do !omi !in(!Omit)     (!omi = !OmitAs)     !doend !ifend
-       !if (!NotReach !ne !null) !then !do !nre !in(!NotReach) (!nre = !NotReachAs) !doend !ifend
-       !if (!OtherMis !ne !null) !then !do !otm !in(!OtherMis) (!otm = !OtherMisAs) !doend !ifend
+       !if (!Omit     !ne !null) !then !do !omi !in(!Omit)     (!unquote(!omi) = !OmitAs)     !doend !ifend
+       !if (!NotReach !ne !null) !then !do !nre !in(!NotReach) (!unquote(!nre) = !NotReachAs) !doend !ifend
+       !if (!OtherMis !ne !null) !then !do !otm !in(!OtherMis) (!unquote(!otm) = !OtherMisAs) !doend !ifend
        (-999 = sysmis) (else = copy) into !concat(!item,"_s").
 !else !if (!upcase(!key) = D) !then
 recode !item
@@ -600,9 +600,14 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
 
   // '# calculate item fit statistics'
   / !quote(!concat('ItemFit <- IRT.itemfit(',!scale,')'))
-  / !quote(!concat('ItemFit2<- msq.itemfit(',!scale,')'))
-  / !quote(!concat('ItemFitStats <- cbind(ItemFit$MD[,1:2],ItemFit$RMSD[,2],ItemFit$RMSD_bc[,2],ItemFit$MAD[,2],ItemFit$chisquare_stat[,2],ItemFit2$itemfit[,3:8])'))
-  / !quote(!concat('colnames(ItemFitStats)<-c("Item", "MD", "RMSD", "RMSD_bc", "MAD","chisquare","Outfit","Outfit_t","Outfit_p","Infit","Infit_t","Infit_p")'))
+
+  / !quote(!concat('# ItemFit2<- msq.itemfit(',!scale,')'))
+  / !quote(!concat('# ItemFitStats <- cbind(ItemFit$MD[,1:2],ItemFit$RMSD[,2],ItemFit$RMSD_bc[,2],ItemFit$MAD[,2],ItemFit$chisquare_stat[,2],ItemFit2$itemfit[,3:8])'))
+  / !quote(!concat('# colnames(ItemFitStats)<-c("Item", "MD", "RMSD", "RMSD_bc", "MAD","chisquare","Outfit","Outfit_t","Outfit_p","Infit","Infit_t","Infit_p")'))
+
+  / !quote(!concat('ItemFitStats <- cbind(ItemFit$MD[,1:2],ItemFit$RMSD[,2],ItemFit$RMSD_bc[,2],ItemFit$MAD[,2],ItemFit$chisquare_stat[,2])'))
+  / !quote(!concat('colnames(ItemFitStats)<-c("Item", "MD", "RMSD", "RMSD_bc", "MAD","chisquare")'))
+
   / !quote(!concat('write.csv(ItemFitStats,"',!outfile,'_ItemFitStats.csv", row.names = FALSE)'))
 
   !if (!regressors !ne !null) !then
@@ -621,7 +626,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   !if (!upcase(!IrtModel) = "1PL") !then
   / !quote(!concat(!scale,'_',!g,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM" , group = responses$', !g, '_n, '))
    !if (!anchors !eq !null) !then 
-  / !quote(!concat('  xsi.init =', !scale, '$xsi.fixed.estimated,'))
+  / !quote(!concat('  xsi.inits =', !scale, '$xsi.fixed.estimated,'))
    !else
   / !quote('   xsi.fixed = xsi.anchors,')
    !ifend 
@@ -630,7 +635,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   !if (!upcase(!IrtModel) = "2PL") !then
   / !quote(!concat(!scale,'_',!g,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM", group = responses$', !g, '_n, '))
    !if (!anchors !eq !null) !then
-  / !quote(!concat('   xsi.init=', !scale, '$xsi.fixed.estimated, B=', !scale, '$B,'))
+  / !quote(!concat('   xsi.inits =', !scale, '$xsi.fixed.estimated, B=', !scale, '$B,'))
    !else
   / !quote('   xsi.fixed = xsi.anchors, B.fixed=B.anchors,')
    !ifend
@@ -863,7 +868,7 @@ weight off.
 
 !if (!upcase(!doirt) = Y !and (!scale !ne !null)) !then
 get data / type = txt
-  / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_RMSDMD.csv"))
+  / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.csv"))
   / delimiters  = ","
   / qualifier   = '"'
   / arrangement = delimited
@@ -873,7 +878,7 @@ get data / type = txt
 delete variables v1.
 compute item = upcase(item).
 sort cases by item !concat(!bv,"_n").
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_RMSDMD.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.sav")).
 execute.
 get data / type = txt
   / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_WRMSD.csv"))
@@ -1221,7 +1226,7 @@ var label response "Response Category"
 sort cases by item !concat(!bv,'_n').
 match files
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_RMSDMD.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.sav"))
   / by item !concat(!bv,'_n').
 !ifend
 
@@ -1316,7 +1321,7 @@ compute selcrit  = !quote(!selcrit).
 sort cases by item !concat(!bv,'_n').
 match files
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_RMSDMD.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.sav"))
   / by item !concat(!bv,'_n').
 !ifend
 
