@@ -373,7 +373,7 @@ echo "Cases that will be used based on ATLEAST parameter.".
 echo "* * *".
 crosstabs table = !concat(!scale,"_taken") by !concat(!scale,"_use").
 
-do if !concat(!scale,"_use") = 1.
+do if (!concat(!scale,"_use") = 1 and !concat(!scale,"_taken") > 0).
 compute !concat(!scale,"_sumscr") = sum(!do !i !in(!fitems) !concat(!i,"_s"), !doend k ) - 1.
 compute !concat(!scale,"_pplus") = (sum(!do !i !in(!fitems) !concat(!i,"_p"), !doend k ) - 1) / !concat(!scale,"_taken").
 end if.
@@ -550,9 +550,9 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   !ifend
   
   !if (!anchors !ne !null) !then
-  / !quote(!concat('xsi.anchors <- readRDS(file="',!anchors,'$xsi.fixed.estimated")'))
+  / !quote(!concat('xsi.anchors <- readRDS(file="',!unquote(!anchors),'$xsi.fixed.estimated")'))
    !if (!upcase(!irtmodel) !eq "2PL") !then
-  / !quote(!concat('B.anchors <- readRDS(file="',!anchors,'$B.fixed.estimated")'))
+  / !quote(!concat('B.anchors <- readRDS(file="',!unquote(!anchors),'$B.fixed.estimated")'))
    !ifend
   !ifend
   
