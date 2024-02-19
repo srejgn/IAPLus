@@ -66,6 +66,8 @@ define !IAPlus  (indir        = !charend('/')              /
                  sourcestamp  = !charend('/') !default(Y)  /
                  dotables     = !charend('/') !default(Y)  /
                  dographs     = !charend('/') !default(Y)  /
+                 writecsv     = !charend('/') !default(Y)  /
+                 writehtm     = !charend('/') !default(Y)  /
                  showmn       = !charend('/') !default(N)  /
                  graphn       = !charend('/') !default(10) / 
                  viewcod      = !charend('/') !default(N)  /
@@ -75,11 +77,11 @@ define !IAPlus  (indir        = !charend('/')              /
                  DoIRT        = !charend('/') !default(N)  /
                  Anchors      = !charend('/')              /
                  Converge     = !charend('/') !default(0.005)  /
-                 Maxiter      = !charend('/') !default(1000)   /
+                 Maxiter      = !charend('/') !default(5000)   /
                  IrtModel     = !charend('/') !default('1PL')  /
                  Regressors   = !charend('/')                  /
                  npvs         = !charend('/') !default(20)     /
-                 SampRegr     = !charend('/') !default(FALSE)  /
+                 SampRegr     = !charend('/') !default(TRUE)  /
                  ScoreType    = !charend('/') !default(WLE)    /
                  CtrDiff      = !charend('/') !default(Y)      /
                  WhereIsR     = !charend('/') !default("C:\Program Files\R\R-4.3.1\bin") /
@@ -549,13 +551,6 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / !quote(!concat('regressors <- read.csv("',!outfile,'_regressors.csv")'))
   !ifend
   
-  !if (!anchors !ne !null) !then
-  / !quote(!concat('xsi.anchors <- readRDS(file="',!unquote(!anchors),'$xsi.fixed.estimated")'))
-   !if (!upcase(!irtmodel) !eq "2PL") !then
-  / !quote(!concat('B.anchors <- readRDS(file="',!unquote(!anchors),'$B.fixed.estimated")'))
-   !ifend
-  !ifend
-  
   // '# checks for all NA and constant responses and eliminate these items'
   / !quote(!concat('WhichAreNA <- sapply(X = responses[1:',!nitems,'], FUN = function(i) {all(is.na(i))})'))
   / 'AreNotNA <- names(Filter(isFALSE, WhichAreNA))'
@@ -571,11 +566,31 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   // !quote(!concat("set.seed(",!seed,")"))
   !ifend
 
+  !if (!anchors !ne !null) !then
+  // '# read anchor information'
+  / !quote(!concat('xsi.anchors <- readRDS(file="',!unquote(!anchors),'$xsi.fixed.estimated")'))
+  // '# create the item list with original and new sequence number based on dropped items'
+  / !quote(!concat('ItemList<-data.frame(ItemSeq=seq.int(colnames(responses[1:',!nitems,'])),ItemName=colnames(responses[1:',!nitems,']))'))
+  /  'ItemList[,3]<-match(ItemList[,2],UseTheseItems)'
+  /  'ItemList<-subset(ItemList, !is.na(ItemList$V3))'
+  // '# find anchors that will be used'
+  / 'use.anchors<-grep(pattern=paste(paste(UseTheseItems,collapse="_Cat|"),"_Cat",sep = ""),x=rownames(xsi.anchors))'
+  / 'use.xsi.anchors<-xsi.anchors[use.anchors,]'
+  / 'use.xsi.anchors[,1]<-seq.int(nrow(use.xsi.anchors))'
+  
+  !if (!upcase(!irtmodel) !eq "2PL") !then
+  // '# this is for when using 2PL'
+  /  !quote(!concat('B.anchors <- readRDS(file="',!unquote(!anchors),'$B.fixed.estimated")'))
+  /  'use.B.anchors <- subset(B.anchors, B.anchors[,1] %in% c(ItemList[,1]))'
+  /  'use.B.anchors[,1] <-  trunc(((seq.int(nrow(use.B.anchors)) -1)/(nrow(use.B.anchors)/nrow(ItemList))))+1'
+  !ifend
+  !ifend
+
   !if (!upcase(!IrtModel) = "1PL") !then
   // '# run 1 pl model'
   / !quote(!concat(!scale,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM",',!Y))
    !if (!anchors !ne !null) !then
-  / !quote('   xsi.fixed = xsi.anchors, ')
+  / !quote('   xsi.fixed = use.xsi.anchors, ')
    !ifend  
   !ifend
 
@@ -583,7 +598,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   // '# run 2 pl model'
   / !quote(!concat(!scale,' <- TAM::tam.mml.2pl(responses[,UseTheseItems], irtmodel="GPCM",', !Y))
    !if (!anchors !ne !null) !then
-  / !quote('   xsi.fixed = xsi.anchors, B.fixed=B.anchors,')
+  / !quote('   xsi.fixed = use.xsi.anchors, B.fixed = use.B.anchors,')
    !ifend  
   !ifend
 
@@ -592,6 +607,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
 
   // '# write item parameters to a csv file'
   / !quote(!concat('write.csv(',!scale,'$item_irt,"',!outfile,'_IRTstats.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(',!scale,'$xsi,"',!outfile,'_xsi.csv", row.names = TRUE)'))
 
   // '# calculate wle and person fit'
   / !quote(!concat('abilities<- tam.wle(',!scale,')'))
@@ -1734,18 +1750,23 @@ add files
           !concat(!firstitem,"_p") to !concat(!lastitem,"_p") all.
 
 save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+
+!if (!upcase(!writecsv) = Y) !then
 save translate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.csv"))
   / replace / type = csv / fieldnames / encoding = 'LOCALE'.
+!ifend
 
 output save
   outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,"_Output.spv"))
   lock = no.
 
+!if (!upcase(!writehtm) = Y) !then
 output export
   / contents export=visible layers=printsetting modelviews=printsetting
   / html documentfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Output.htm"))
     notescaptions=yes interactlayers=no styling=yes imageformat=jpg
   / jpg percentsize=100 grayscale=no.
+!ifend
 
 new file.
 
