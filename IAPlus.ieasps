@@ -89,7 +89,7 @@ define !IAPlus  (indir        = !charend('/')              /
 
 dataset close all.
 new file.
-output close all.
+output close *.
 output new name = !outfile.
 
 omsend tag = ALL.
@@ -546,9 +546,9 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / !quote(!concat('if (file.exists("',!outfile,'_IRTStats.csv")) {file.remove("',!outfile,'_IRTStats.csv")}'))
   / !quote(!concat('if (file.exists("',!outfile,'.RData")) {file.remove("',!outfile,'.RData")}'))
   // '# read the data'
-  / !quote(!concat('responses <- read.csv("',!outfile,'_responses.csv")'))
+  / !quote(!concat('responses <- read.csv("',!outfile,'_Responses.csv")'))
   !if (!regressors !ne !null) !then
-  / !quote(!concat('regressors <- read.csv("',!outfile,'_regressors.csv")'))
+  / !quote(!concat('regressors <- read.csv("',!outfile,'_Regressors.csv")'))
   !ifend
   
   // '# checks for all NA and constant responses and eliminate these items'
@@ -1813,7 +1813,7 @@ recode keys    ("" = "X") (else = copy).
 recode reverse ("" = "N") (else = copy).
 recode maxscrs ("" = "1") (else = copy).
 save translate
-  / outfile= !quote(!concat(!unquote(!odir),"\",!ifile,"_",!sheet,"_ItemList.csv"))
+  / outfile= !quote(!concat(!unquote(!odir),"\",!unquote(!ifile),"_",!sheet,"_ItemList.csv"))
   / replace  / type = csv
   / keep = Items Keys Reverse MaxScrs Exclude
   / fieldnames / encoding = 'LOCALE'.
