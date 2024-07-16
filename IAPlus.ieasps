@@ -80,8 +80,9 @@ define !IAPlus  (indir        = !charend('/')              /
                  Maxiter      = !charend('/') !default(5000)   /
                  IrtModel     = !charend('/') !default('1PL')  /
                  Regressors   = !charend('/')                  /
-                 npvs         = !charend('/') !default(20)     /
-                 SampRegr     = !charend('/') !default(TRUE)  /
+                 DoPVs        = !charend('/') !default(N)      /
+                 npvs         = !charend('/') !default(10)     /
+                 SampRegr     = !charend('/') !default(TRUE)   /
                  ScoreType    = !charend('/') !default(WLE)    /
                  CtrDiff      = !charend('/') !default(Y)      /
                  WhereIsR     = !charend('/') !default("C:\Program Files\R\R-4.3.1\bin") /
@@ -90,7 +91,7 @@ define !IAPlus  (indir        = !charend('/')              /
 dataset close all.
 new file.
 output close *.
-output new name = !outfile.
+output new name = !unquote(!outfile).
 
 omsend tag = ALL.
 preserve.
@@ -151,7 +152,7 @@ set onumbers=values ovars=names tnumbers=LABELS tvars=names.
 echo "* * *".
 echo "Retrieving file with the analysis variables".
 echo "* * *".
-get file = !quote(!concat(!unquote(!indir),"\",!infile,".sav"))
+get file = !quote(!concat(!unquote(!indir),"\",!unquote(!infile),".sav"))
   / keep = !idvars !keepvars !classvars !byvars !fitems !wgtvar !critvar !selvar !regressors.
 weight off.
 
@@ -198,11 +199,11 @@ echo "* * *".
 
 oms / select all
     / IF COMMANDS=['File Information'] SUBTYPES=['Variable Information']
-    / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav")) viewer=no
+    / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav")) viewer=no
     / tag = 'filevars'.
 oms / select all
     / IF COMMANDS=['File Information'] SUBTYPES=['Variable Values']
-    / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav")) viewer=no
+    / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Val_Labels.sav")) viewer=no
     / tag = 'filevalues'.
 display dictionary / var = k !fitems.
 omsend tag= ['filevars' 'filevalues'].
@@ -331,7 +332,7 @@ desc var = !do !i !in(!fitems) !concat(!i,"_p") !doend.
 !ifend
 execute.
 OMS / SELECT TABLES / IF COMMANDS = ["Descriptives"] SUBTYPES = ["Descriptive Statistics"]
-    / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Desc.sav")) viewer = yes
+    / DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Desc.sav")) viewer = yes
     / tag = 'descriptives'.
 desc var = !do !i !in(!fitems) !concat(!i,"_s") !doend.
 omsend tag = ['descriptives'].
@@ -401,11 +402,11 @@ examine !concat(!scale,"_sumscr") !concat(!scale,"_pplus") by !byvars
 !ifend
 
 * Save a file with CTT scores and scored items.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 
 * Arrange the file with the labels.
 * These labels are done this way to account for no labels in the file.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav"))
     / rename=(var1 label = item Var_Label) 
     / keep = item Var_Label.
 alter type item(a32) Var_Label (a128).
@@ -448,20 +449,20 @@ end if.
 !doend
 format Key (f2.0) ISeq (f3.0).
 sort cases by Item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav")).
 
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Val_Labels.sav"))
     / rename=(var1 var2 label = Item Response Val_Label)
     / keep = Item Response Val_Label.
 alter type item(a32) Val_Label(a64).
 sort cases by Item Response.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Val_Labels.sav")).
 
 * This is where the IRT portion starts.
 !let !IRTScore = !null
 !if (!upcase(!DoIRT)=Y !and (!scale !ne !null)) !then
 
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 
 * This computes the maximum number of steps across all items.
 * Used to read in IRT item parameters from TAM.
@@ -503,7 +504,7 @@ compute pwgt = !wgt.
 temporary.
 select if (!concat(!scale,"_use") = 1).
 save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,"_Responses.csv"))
+  / outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Responses.csv"))
   / replace  / type = csv
   / keep = !do !i !in(!fitems) !concat(!i,"_s") !doend
            CaseSeq pwgt !wgt !idvars !classvars !byvars !allcv2
@@ -516,7 +517,7 @@ execute.
 temporary.
 select if (!concat(!scale,"_use") = 1).
 save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,"_Regressors.csv"))
+  / outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Regressors.csv"))
   / replace  / type = csv
   / keep = !regressors
   / fieldnames / encoding = 'LOCALE'.
@@ -532,7 +533,7 @@ execute.
 select if ($casenum = 1).
 string wd (!concat(a,!length(!unquote(!outdir)))).
 compute wd = replace(!quote(!unquote(!outdir)),"\","/").
-write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) encoding = 'UNICODE'
+write outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_TAMcode.R")) encoding = 'UNICODE'
   / !quote(!concat('# R Code to do IRT analysis for scale ',!scale)) 
   // '# clean up the environment' 
   / 'rm(list=ls())'
@@ -542,13 +543,17 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   // '# set working directory and delete existing files'
   / 'setwd("' wd '")'
   /
-  / !quote(!concat('if (file.exists("',!outfile,'_PersonScores.csv")) {file.remove("',!outfile,'_PersonScores.csv")}'))
-  / !quote(!concat('if (file.exists("',!outfile,'_IRTStats.csv")) {file.remove("',!outfile,'_IRTStats.csv")}'))
-  / !quote(!concat('if (file.exists("',!outfile,'.RData")) {file.remove("',!outfile,'.RData")}'))
+  / !quote(!concat('if (file.exists("',!unquote(!outfile),'_PersonScores.csv")) {file.remove("',!unquote(!outfile),'_PersonScores.csv")}'))
+  / !quote(!concat('if (file.exists("',!unquote(!outfile),'_IRTStats.csv")) {file.remove("',!unquote(!outfile),'_IRTStats.csv")}'))
+  / !quote(!concat('if (file.exists("',!unquote(!outfile),'.RData")) {file.remove("',!unquote(!outfile),'.RData")}'))
   // '# read the data'
-  / !quote(!concat('responses <- read.csv("',!outfile,'_Responses.csv")'))
+  / !quote(!concat('responses <- read.csv("',!unquote(!outfile),'_Responses.csv")'))
+  / 'message("\nThese are the response variables in the response file:")'
+  / !quote(!concat("print (colnames(responses[,1:",!nitems,"]))"))
   !if (!regressors !ne !null) !then
-  / !quote(!concat('regressors <- read.csv("',!outfile,'_Regressors.csv")'))
+  / !quote(!concat('regressors <- read.csv("',!unquote(!outfile),'_Regressors.csv")'))
+  / 'message("\nThese are the regressors:")'
+  / 'print (colnames(regressors))'
   !ifend
   
   // '# checks for all NA and constant responses and eliminate these items'
@@ -591,7 +596,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / !quote(!concat(!scale,' <- TAM::tam.mml(responses[,UseTheseItems], irtmodel="PCM",',!Y))
    !if (!anchors !ne !null) !then
   / !quote('   xsi.fixed = use.xsi.anchors, ')
-   !ifend  
+   !ifend
   !ifend
 
   !if (!upcase(!IrtModel) = "2PL") !then
@@ -606,8 +611,8 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / !quote(!concat('   control=list(nodes=seq(-4, 4, len=41), convD= ', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
 
   // '# write item parameters to a csv file'
-  / !quote(!concat('write.csv(',!scale,'$item_irt,"',!outfile,'_IRTstats.csv", row.names = FALSE)'))
-  / !quote(!concat('write.csv(',!scale,'$xsi,"',!outfile,'_xsi.csv", row.names = TRUE)'))
+  / !quote(!concat('write.csv(',!scale,'$item_irt,"',!unquote(!outfile),'_IRTstats.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(',!scale,'$xsi,"',!unquote(!outfile),'_xsi.csv", row.names = TRUE)'))
 
   // '# calculate wle and person fit'
   / !quote(!concat('abilities<- tam.wle(',!scale,')'))
@@ -624,17 +629,17 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / !quote(!concat('ItemFitStats <- cbind(ItemFit$MD[,1:2],ItemFit$RMSD[,2],ItemFit$RMSD_bc[,2],ItemFit$MAD[,2],ItemFit$chisquare_stat[,2])'))
   / !quote(!concat('colnames(ItemFitStats)<-c("Item", "MD", "RMSD", "RMSD_bc", "MAD","chisquare")'))
 
-  / !quote(!concat('write.csv(ItemFitStats,"',!outfile,'_ItemFitStats.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(ItemFitStats,"',!unquote(!outfile),'_ItemFitStats.csv", row.names = FALSE)'))
 
-  !if (!regressors !ne !null) !then
+  !if (!regressors !ne !null !or !upcase(!dopvs) = Y) !then
   // '# write out gammas and compute PVs'
-  / !quote(!concat('write.csv(',!scale,'$beta,"',!outfile,'_Gammas.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(',!scale,'$beta,"',!unquote(!outfile),'_Gammas.csv", row.names = FALSE)'))
   / !quote(!concat('pvs<- tam.pv(',!scale,', nplausible = ', !npvs, ', samp.regr= ',!upcase(!sampregr),', normal.approx = TRUE, ntheta = 200)'))
   / !quote(!concat('personstats<-cbind(personstats,pvs$pv[,-1])'))
   !ifend
 
   // '# write out person statistics'
-  / !quote(!concat('write.csv(personstats,"',!outfile,'_PersonScores.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(personstats,"',!unquote(!outfile),'_PersonScores.csv", row.names = FALSE)'))
 
   !do !g !in (!upcase(!byvars))
   // !quote(!concat('#run the analysis using grouping variable ',!g))
@@ -644,7 +649,7 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
    !if (!anchors !eq !null) !then 
   / !quote(!concat('  xsi.inits =', !scale, '$xsi.fixed.estimated,'))
    !else
-  / !quote('   xsi.fixed = xsi.anchors,')
+  / !quote('   xsi.fixed = use.xsi.anchors,')
    !ifend 
   !ifend
 
@@ -653,14 +658,14 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
    !if (!anchors !eq !null) !then
   / !quote(!concat('   xsi.inits =', !scale, '$xsi.fixed.estimated, B=', !scale, '$B,'))
    !else
-  / !quote('   xsi.fixed = xsi.anchors, B.fixed=B.anchors,')
+  / !quote('   xsi.fixed = use.xsi.anchors, B.fixed=use.B.anchors,')
    !ifend
   !ifend
   / !quote('   pweights=responses$pwgt, pid=responses$CaseSeq,')
   / !quote(!concat('   control=list(nodes=seq(-4, 4, len=41), convD=', !converge, ', conv=', !converge, ', convM=', !converge, ', maxiter=',!maxiter,'))'))
   /
   / '#write item parameters'
-  / !quote(!concat('write.csv(',!scale,'_',!g,'$item_irt,"',!outfile,'_',!g,'_IRTstats.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(',!scale,'_',!g,'$item_irt,"',!unquote(!outfile),'_',!g,'_IRTstats.csv", row.names = FALSE)'))
   /
   / '# calculate and write item fit statistics'
   / !quote(!concat('ItemFit_',!g,'<-IRT.itemfit(',!scale,'_',!g,')'))
@@ -676,25 +681,35 @@ write outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_TAMcode.R")) enc
   / '  }'
   / !quote(!concat('colnames(ItemFitStats_',!g,')<-c("Item","',!g,'_n","',!g,'","RMSD","MD","RMSD_bc","MAD","chisquare")'))
   / !quote(!concat('WRMSD_',!g,'<- ItemFit_',!g,'$RMSD[,c(1,ncol(ItemFit_',!g,'$RMSD))]'))
-  / !quote(!concat('write.csv(ItemFitStats_',!g,',"',!outfile,'_',!g,'_ItemFitStats.csv", row.names = FALSE)'))
-  / !quote(!concat('write.csv(WRMSD_',!g,',"',!outfile,'_',!g,'_WRMSD.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(ItemFitStats_',!g,',"',!unquote(!outfile),'_',!g,'_ItemFitStats.csv", row.names = FALSE)'))
+  / !quote(!concat('write.csv(WRMSD_',!g,',"',!unquote(!outfile),'_',!g,'_WRMSD.csv", row.names = FALSE)'))
   /
   / '# write person scores'
+
+
   / !quote(!concat('personstats_',!g,'<-cbind(',!scale,'_',!g,'$person, responses$',!g,', responses$',!g,'_n)'))
-  / !quote(!concat('write.csv(personstats_',!g, ',"',!outfile,'_',!g,'_PersonScores.csv", row.names = FALSE)'))
+
+  !if (!upcase(!dopvs) = Y) !then
+  / !quote(!concat('pvs_',!g,'<- tam.pv(',!scale,'_',!g,', nplausible = ', !npvs, ', samp.regr= ',!upcase(!sampregr),', normal.approx = TRUE, ntheta = 200)'))
+  / !quote(!concat('personstats_',!g,'<-cbind(personstats_',!g,' ,pvs_',!g,'$pv[,-1])'))
+  !ifend
+
+  / !quote(!concat('write.csv(personstats_',!g, ',"',!unquote(!outfile),'_',!g,'_PersonScores.csv", row.names = FALSE)'))
+
+
   !doend
   !if (!upcase(!SaveRData) = Y) !then
   /
   / '# save R environment if requested'
-  / !quote(!concat('save.image("',!outfile,"_",!scale,'.RData")'))
-  / !quote(!concat('saveRDS(',!scale,'$xsi.fixed.estimated, file = "',!outfile,"_",!scale,'$xsi.fixed.estimated")'))
+  / !quote(!concat('save.image("',!unquote(!outfile),"_",!scale,'.RData")'))
+  / !quote(!concat('saveRDS(',!scale,'$xsi.fixed.estimated, file = "',!unquote(!outfile),"_",!scale,'$xsi.fixed.estimated")'))
      !do !g !in (!upcase(!byvars))
-  / !quote(!concat('saveRDS(',!scale,"_",!g,'$xsi.fixed.estimated, file = "',!outfile,"_",!scale,'_',!g,'$xsi.fixed.estimated")'))
+  / !quote(!concat('saveRDS(',!scale,"_",!g,'$xsi.fixed.estimated, file = "',!unquote(!outfile),"_",!scale,'_',!g,'$xsi.fixed.estimated")'))
      !doend
   !if (!upcase(!IrtModel) = "2PL") !then
-  / !quote(!concat('saveRDS(',!scale,'$B.fixed.estimated, file = "',!outfile,"_",!scale,'$B.fixed.estimated")'))
+  / !quote(!concat('saveRDS(',!scale,'$B.fixed.estimated, file = "',!unquote(!outfile),"_",!scale,'$B.fixed.estimated")'))
      !do !g !in (!upcase(!byvars))
-  / !quote(!concat('saveRDS(',!scale,"_",!g,'$B.fixed.estimated, file = "',!outfile,"_",!scale,'_',!g,'$B.fixed.estimated")'))
+  / !quote(!concat('saveRDS(',!scale,"_",!g,'$B.fixed.estimated, file = "',!unquote(!outfile),"_",!scale,'_',!g,'$B.fixed.estimated")'))
      !doend
   !ifend
   !ifend
@@ -710,12 +725,12 @@ echo "Running TAM (See 'Running host...' on the bottom right side of the output 
 echo "This might take a while. Please be patient.".
 echo "* * *".
 
-host command =  [!quote(!concat('"',!unquote(!WhereIsR),'\R.exe" CMD BATCH "',!unquote(!outdir),'\',!outfile,'_TAMcode.R"'))].
+host command =  [!quote(!concat('"',!unquote(!WhereIsR),'\R.exe" CMD BATCH "',!unquote(!outdir),'\',!unquote(!outfile),'_TAMcode.R"'))].
 
 * get item parameters from TAM.
 get data
   / type = txt
-  / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTstats.csv"))
+  / file =!quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_IRTstats.csv"))
   / delimiters  = ","
   / qualifier   = '"'
   / arrangement = delimited
@@ -741,7 +756,7 @@ title "Item parameters from TAM".
 list vars = all.
 
 sort cases by item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTStats.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_IRTStats.sav")).
 
 echo "* * *".
 echo "Descriptive statistics for item parameters from TAM.".
@@ -750,7 +765,7 @@ desc var = Alpha Beta !if (!upcase(!CtrDiff) = Y) !then oBeta !ifend.
 
 * this is to center the difficulty at zero.
 !if (!upcase(!CtrDiff) = Y) !then
-aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTstatsShift.sav"))
+aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_IRTstatsShift.sav"))
   / break = k
   / shift = mean(shift).
 !ifend
@@ -758,7 +773,7 @@ aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTstatsShif
 * get person scores from TAM.
 get data
   / type = txt
-  / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_PersonScores.csv"))
+  / file =!quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_PersonScores.csv"))
   / delimiters  = ","
   / qualifier   = '"'
   / arrangement = delimited
@@ -769,16 +784,16 @@ get data
                   !concat(!scale,"_EAP") f9.5 !concat(!scale,"_EAP.se") f9.5
                   !concat(!scale,"_WLE") f9.5 !concat(!scale,"_WLE.se") f9.5 
                   outfit f9.5 outfit_t f9.5 infit f9.5 infit_t f9.5
-  !if (!regressors !ne !null) !then !do !pv = 1 !to !npvs !concat(!scale,"_PV",!pv) f9.5 !doend !ifend .
+  !if (!regressors !ne !null !or !upcase(!dopvs) = Y) !then !do !pv = 1 !to !npvs !concat(!scale,"_PV",!pv) f9.5 !doend !ifend .
 execute.
 
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_PersonScores.sav")) .
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_PersonScores.sav")) .
 
 !if (!upcase(!CtrDiff) = Y) !then
 compute k = 1.
 match files
   / file = *
-  / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTStatsShift.sav"))
+  / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_IRTStatsShift.sav"))
      / by k.
 rename variables (!concat(!scale,"_EAP") !concat(!scale,"_WLE") = !concat(!scale,"_oEAP") !concat(!scale,"_oWLE")).
 compute !concat(!scale,"_EAP") = !concat(!scale,"_oEAP") - shift.
@@ -797,7 +812,7 @@ desc var = TAMweight TAMsumscore TAMmaxscore
           !concat(!scale,"_WLE") !concat(!scale,"_WLE.se") .
 
 match files
-  / file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")) / in=FromSource
+  / file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")) / in=FromSource
   / file = *  / in=FromTAM
     / by CaseSeq.
 
@@ -810,7 +825,7 @@ echo "* * *".
 corr var = !concat(!scale,"_sumscr",!blank(1),!scale,"_pplus",!blank(1),!scale,"_wle",!blank(1),!scale,"_eap").
 
 * save the file with the scores.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav"))
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav"))
   / drop = FromTAM FromSource.
 
 !let !IRTScore = !concat(!scale,"_",!ScoreType)
@@ -819,7 +834,7 @@ save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav"))
 * end of the IRT processing.
 !ifend
 
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 
 * check the criteria.
 !if (!upcase(!ChkCriteria)=Y !and !critvar !ne !null) !then
@@ -840,7 +855,7 @@ weight off.
 * This section is to do a FA with the set of items. Can be incomplete matrix sampling
 * but needs a full correlation matrix. Uses scored items and sample as a whole.
 !if (!upcase(!factor) = Y !and (!scale !ne !null)) !then
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 select if !concat(!scale,"_use") = 1.
 weight by !wgt.
 factor var = !concat(!firstitem,"_s") to !concat(!lastitem,"_s")
@@ -884,7 +899,7 @@ weight off.
 
 !if (!upcase(!doirt) = Y !and (!scale !ne !null)) !then
 get data / type = txt
-  / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.csv"))
+  / file =!quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bvr,"_ItemFitStats.csv"))
   / delimiters  = ","
   / qualifier   = '"'
   / arrangement = delimited
@@ -894,10 +909,10 @@ get data / type = txt
 delete variables v1.
 compute item = upcase(item).
 sort cases by item !concat(!bv,"_n").
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bvr,"_ItemFitStats.sav")).
 execute.
 get data / type = txt
-  / file =!quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_WRMSD.csv"))
+  / file =!quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bvr,"_WRMSD.csv"))
   / delimiters  = ","
   / qualifier   = '"'
   / arrangement = delimited
@@ -906,7 +921,7 @@ get data / type = txt
   / variables   = item a32 WRMSD f13.7 .
 compute item = upcase(item).
 sort cases by item .
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_WRMSD.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bvr,"_WRMSD.sav")).
 execute.
 !ifend
 !ifend
@@ -925,7 +940,7 @@ execute.
 !let !ncvar = !length(!q)
 
 * Compute statistics item by item.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 
 *omsend tag = ALL.
 
@@ -938,7 +953,7 @@ select if !concat(!scale,"_use") = 1.
 * compute group means. these are used to compute equated pplus stats.
 * this also gets all possible groups in the file.
 weight by !wgt.
-aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues.sav"))
+aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues.sav"))
   / presorted
   / break = k !allcvars2 !allcvars
  !if (!upcase(!DoIRT) = Y !and (!scale !ne !null)) !then
@@ -963,7 +978,7 @@ OMS
 OMS
   /SELECT tables
   /IF COMMANDS=['Means'] SUBTYPES=['Report']
-  /DESTINATION VIEWER=no format = sav outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ResponseStats.sav"))
+  /DESTINATION VIEWER=no format = sav outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ResponseStats.sav"))
   / tag = 'means2'.
 
 set tnumbers = values.
@@ -983,11 +998,11 @@ OMS /select all / if commands = ["Descriptives"] / destination viewer = no.
 set tnumbers = values.
 
 OMS /SELECT tables /IF COMMANDS = ["Correlations"] SUBTYPES = ["Correlations"]
-    /DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Corr.sav")) viewer = no / tag = 'correlations'.
+    /DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Corr.sav")) viewer = no / tag = 'correlations'.
 OMS /SELECT tables /IF COMMANDS = ["Correlations"] SUBTYPES = ["Descriptive Statistics"]
-    /DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescA.sav")) viewer = no / tag = 'descriptives1'.
+    /DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescA.sav")) viewer = no / tag = 'descriptives1'.
 OMS /SELECT tables /IF COMMANDS = ["Descriptives"] SUBTYPES = ["Descriptive Statistics"]
-    /DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescB.sav")) viewer = no / tag = 'descriptives2'.
+    /DESTINATION FORMAT = SAV OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescB.sav")) viewer = no / tag = 'descriptives2'.
 
 * This gets the discrimination coefficients and descriptive statistics for the items.
 
@@ -1010,25 +1025,25 @@ omsend tag=['correlations' 'descriptives1' 'descriptives2'].
 
 
 * expand group values file so there is one record per item for each group.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues.sav")).
 loop ISeq = 1 to !nitems.
-xsave outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues2.sav")).
+xsave outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues2.sav")).
 end loop.
 execute.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues2.sav")) / drop = x.
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues2.sav")) / drop = x.
 sort cases by Iseq.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues3.sav")).
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues3.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav")).
 sort cases by ISeq.
 match files
  / table = *
- / file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues3.sav"))
+ / file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues3.sav"))
    / by ISeq.
 sort cases by k !allcvars2 item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues4.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues4.sav")).
 
 * Process min/max for the items. Done earlier for the entire file in case a min or max does not occur for a group.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Desc.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Desc.sav"))
   / keep = var1 Minimum Maximum
   / rename =(var1 Minimum Maximum = Item_s ItemMin ItemMax).
 compute NSteps = ItemMax - ItemMin.
@@ -1037,10 +1052,10 @@ select if rtrim(Item_s) <> "Valid N (listwise)".
 string Item(a32).
 compute Item = upcase(char.substr(item_s,1,char.length(rtrim(item_s))-2)).
 sort cases by item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Desc2.sav")) / drop = item_s.
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Desc2.sav")) / drop = item_s.
 
 * Process descriptives and discrimination coefficients for the items.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescA.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescA.sav"))
   / keep = var1 to !concat(var,!length(!concat(!q,"qq"))) N Mean Std.Deviation
     / rename =(var1 to !concat(var,!length(!concat(!q,"qq"))) Mean N Std.Deviation =
                k !allcvars2 Item_s ItemMean SumWgts ItemStDev).
@@ -1050,11 +1065,11 @@ select if upcase(Item_s) <> !upcase(!quote(!i)).
 string Item(a32).
 compute Item = upcase(char.substr(item_s,1,char.length(rtrim(item_s))-2)).
 sort cases by k !allcvars2 item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescA2.sav"))
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescA2.sav"))
   / drop = item_s.
 execute.
 
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescB.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescB.sav"))
   / keep = var1 to !concat(var,!length(!concat(!q,"qq"))) N
     / rename =(var1 to !concat(var,!length(!concat(!q,"qq"))) N =
                k !allcvars2 Item_s ValidCases).
@@ -1062,11 +1077,11 @@ select if rtrim(Item_s) <> "Valid N (listwise)".
 string Item(a32).
 compute Item = upcase(char.substr(item_s,1,char.length(rtrim(item_s))-2)).
 sort cases by k !allcvars2 item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescB2.sav"))
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescB2.sav"))
    / drop = item_s.
 execute.
 
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Corr.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Corr.sav"))
   / keep = var1 to !concat(var,!length(!concat(!q,"qqq"))) !critvars
     / rename =(var1 to !concat(var,!length(!concat(!q,"qqq"))) !critvars =
                k !allcvars2 Item_s StatType !do !crv !in(!critvars) !concat(CorrW_,!crv) !doend ).
@@ -1074,7 +1089,7 @@ select if StatType = "Pearson Correlation".
 string Item(a32).
 compute Item = upcase(char.substr(item_s,1,char.length(rtrim(item_s))-2)).
 sort cases by k !allcvars2 item.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Corr.sav")) / drop = item_s StatType.
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Corr.sav")) / drop = item_s StatType.
 execute.
 
 echo "* * *".
@@ -1082,35 +1097,35 @@ echo "Creating Summary Statistics...".
 echo "* * *".
 
 match files
- / file  = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Corr.sav"))
- / file  = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescA2.sav"))
- / file  = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DescB2.sav"))
+ / file  = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Corr.sav"))
+ / file  = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescA2.sav"))
+ / file  = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DescB2.sav"))
    / by k !allcvars2 Item.
 execute.
 
 sort cases by item.
 match files
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Desc2.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Desc2.sav"))
     / by item.
 
 compute PPlus = ItemMean / ItemMax.
 
 sort cases by k !allcvars2 item.
 match files
- / file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues4.sav"))
+ / file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues4.sav"))
  / file = *
   / by k !allcvars2 item.
 
 * select if ValidCases > 0.
 
 sort cases by item k !allcvars2.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats_tmp.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_SumStats_tmp.sav")).
 
 echo "* * *".
 echo "Secondary Processing of the Items".
 echo "* * *".
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ResponseStats.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ResponseStats.sav"))
   / rename = (k = NCases).
 rename variables (var1 to !concat(var,!length(!concat(!q,"qq"))) !wgt = k !allcvars2 ResponseA SumWgt).
 string Item(a32).
@@ -1125,7 +1140,7 @@ if (nresp = 1) Response = -888.
 select if (Response ne -999).
 execute.
 delete variables !concat(var,!length(!concat(!q,"qqq"))) nresp command_ subtype_ label_ ResponseA.
-*save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ResponseStats2.sav")).
+*save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ResponseStats2.sav")).
 
 aggregate outfile = * mode = addvariables
   / break = k !allcvars2 item
@@ -1142,7 +1157,7 @@ compute !concat(sd_,!crv)   = sqrt(!concat(w,!crv,sq)  / SumWgt   - (!concat(w,!
 compute !concat(t_sd,!crv) = sqrt(!concat(t_w,!crv,sq)/ t_SumWgt - (!concat(t_w,!crv)/t_SumWgt)**2).
 !doend
 end if.
-*save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ResponseStats3.sav")).
+*save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ResponseStats3.sav")).
 
 * Compute statistics for rbis and rpbis.
 compute p = SumWgt / t_SumWgt.
@@ -1160,7 +1175,7 @@ end if.
 sort cases by item.
 match files
  / file  = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav"))
    / by item.
 
 **.
@@ -1173,7 +1188,7 @@ alter type item(a32).
 sort cases by item k !allcvars2.
 match file
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats_tmp.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_SumStats_tmp.sav"))
    / by item k !allcvars2.
 
 **.
@@ -1196,11 +1211,11 @@ variable label Response "Response Category".
 format PPlus !do !crv !in(!critvars) !concat(CorrW_,!crv) !doend (f5.2).
 
 sort cases by item response.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats_tmp.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats_tmp.sav")).
 
 match files
-   / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav"))
-   / file  = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats_tmp.sav"))
+   / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav"))
+   / file  = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats_tmp.sav"))
     / drop = z density t_SumWgt
          !do !crv !in(!critvars)
             !concat(w,!crv)    !concat(t_w,!crv)
@@ -1213,7 +1228,7 @@ match files
 * !concat(mn_,!crv).
 
 match files
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Val_Labels.sav"))
  / file  = *
    / by item response.
 
@@ -1227,7 +1242,7 @@ compute scalelbl = !quote(!scalelbl).
 compute date     = $date.
 compute time     = concat(string(xdate.hour($time),f2.0),'h',string(xdate.minute($time),f2.0),'m').
 compute indir    = !quote(!unquote(!indir)).
-compute infile   = !quote(!infile).
+compute infile   = !quote(!unquote(!infile)).
 compute selcrit  = !quote(!selcrit).
 
 var label response "Response Category"
@@ -1242,7 +1257,7 @@ var label response "Response Category"
 sort cases by item !concat(!bv,'_n').
 match files
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bvr,"_ItemFitStats.sav"))
   / by item !concat(!bv,'_n').
 !ifend
 
@@ -1256,19 +1271,19 @@ add files
   / drop = k !allcvars2.
 sort cases by iseq item Key Reverse !allcvars.
 save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats.csv"))
+  / outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats.csv"))
   / replace  / type = csv 
   / fieldnames / encoding = 'LOCALE'.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats.sav")) .
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats.sav")) .
 
 !if (!upcase(!DoIRT)=Y !and (!scale !ne !null)) !then
 match file
- / file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats_tmp.sav"))
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTstats.sav"))
-  !if (!bv !ne !null) !then / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bv,"_WRMSD.sav"))  !ifend
+ / file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_SumStats_tmp.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_IRTstats.sav"))
+  !if (!bv !ne !null) !then / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bv,"_WRMSD.sav"))  !ifend
    / by item.
 !else
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats_tmp.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_SumStats_tmp.sav"))
 !ifend
 
 compute k = 1.
@@ -1276,7 +1291,7 @@ sort cases by k !allcvars2 item.
 !if (!upcase(!DoIRT) = Y !and (!scale !ne !null)) !then
 match files
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupValues4.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupValues4.sav"))
    / by k !allcvars2 item.
 
 * calculate equated pplus.
@@ -1330,14 +1345,14 @@ compute scalelbl = !quote(!scalelbl).
 compute date     = $date.
 compute time     = concat(string(xdate.hour($time),f2.0),'h',string(xdate.minute($time),f2.0),'m').
 compute indir    = !quote(!unquote(!indir)).
-compute infile   = !quote(!infile).
+compute infile   = !quote(!unquote(!infile)).
 compute selcrit  = !quote(!selcrit).
 
 !if (!upcase(!doirt) = Y !and !scale !ne !null !and !bv !ne !null) !then
 sort cases by item !concat(!bv,'_n').
 match files
  / file = *
- / table = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!bvr,"_ItemFitStats.sav"))
+ / table = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!bvr,"_ItemFitStats.sav"))
   / by item !concat(!bv,'_n').
 !ifend
 
@@ -1353,10 +1368,10 @@ add files
  / drop = k !allcvars2.
 
 save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats.csv"))
+  / outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_SumStats.csv"))
   / replace  / type = csv 
   / fieldnames / encoding = 'LOCALE'.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_SumStats.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_SumStats.sav")).
 
 ** Prepare file for DIF Analysis.
 !if (!upcase(!DoDIF) = Y !and !bv !ne !null) !then
@@ -1364,7 +1379,7 @@ echo "* * *".
 echo "Preparing file for DIF Analysis".
 echo "* * *".
 
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 !if (!scale !ne !null) !then
 select if (!concat(!scale,"_use") = 1).
 !ifend
@@ -1420,7 +1435,7 @@ crosstabs tables !bv by !do !cv !in(!critvars) !concat(!cv,"_Level") !doend
 
 weight by !wgt.
 !do !cv !in(!critvars)
-aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav"))
+aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!cv,!filetag,"_DifData.sav"))
   / break = !bv !concat(!cv,"_Level") !classvars
   / !do !i !in(!fitems) !concat(!i,"_p") !doend
      = mean(!do !i !in(!fitems) !concat(!i,"_p") !doend)
@@ -1429,7 +1444,7 @@ aggregate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filet
 !doend
 
 !do !cv !in(!critvars)
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!cv,!filetag,"_DifData.sav")).
 varstocases
  / make !concat(!cv,"_PPlus") from !do !i !in (!fitems) !concat(!i,"_p") !doend
  / index = item (!concat(!cv,"_PPlus")) / null = keep.
@@ -1438,7 +1453,7 @@ sort cases by item.
 alter type item(a32).
 compute Item = upcase(char.substr(item,1,char.length(rtrim(item))-2)).
 match files
- / table  = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav"))
+ / table  = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav"))
  / file   = *
   / by item.
 string Criteria (a32).
@@ -1446,11 +1461,11 @@ compute criteria = !quote(!cv).
 rename var (!concat(!cv,"_PPlus") !concat(!cv,"_NCases") !concat(!cv,"_Level") !concat(!cv,"_SumWgts") =
             PPlus NCases Level SumWgts).
 format NCases (f6.0).
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!cv,!filetag,"_DifData.sav")).
 !doend
 add files
   !do !cv !in(!critvars)
-    file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav"))
+    file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!cv,!filetag,"_DifData.sav"))
   !doend.
 variable labels
   Level  "Score level based on criteria"
@@ -1465,16 +1480,16 @@ compute splitvar = concat(rtrim(var_label), " (", rtrim(item), ") Key (",string(
 autorecode splitvar / into ItemID.
 
 save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DIF.csv"))
+  / outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DIF.csv"))
   / replace  / type = csv / fieldnames / encoding = 'LOCALE'.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DIF.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DIF.sav")).
 execute.
 !ifend.
 ** End of DIF analysis.
 
 
 ** Prepare Item Stats for Graphs.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats.sav"))
   / keep = !classvars !bv iseq item key reverse response NCases PPlus ValidCases SumWgts p
             Val_Label Var_Label
             !do !crv !in(!critvars) !concat(rbi_,!crv) !concat(CorrW_,!crv) !doend
@@ -1498,9 +1513,9 @@ compute splitvar = concat(rtrim(var_label), " (", rtrim(item), ") Key (",string(
 autorecode splitvar / into ItemID.
 
 save translate
-  / outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats4Graphs.csv"))
+  / outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats4Graphs.csv"))
   / replace  / type = csv / fieldnames / encoding = 'LOCALE'.
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats4Graphs.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats4Graphs.sav")).
 execute.
 ** End prepare Item Stats for Graphs.
 
@@ -1511,14 +1526,14 @@ set tnumbers = labels.
 OMS
   /SELECT Headings Tables Charts
   /IF COMMANDS=['CTables' 'Graph'] SUBTYPES=['Custom Table' 'Graph']
-  /DESTINATION VIEWER=yes format = xlsx outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_CTables"))
+  /DESTINATION VIEWER=yes format = xlsx outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_CTables"))
   /tag = 'ctables1'.
 !ifend
 !if (!upcase(!DoHTML) = Y) !then
 OMS
   /SELECT Headings Tables Charts
   /IF COMMANDS=['CTables' 'Graph'] SUBTYPES=['Custom Table' 'Graph']
-  /DESTINATION VIEWER=yes format = html outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_CTables.html"))
+  /DESTINATION VIEWER=yes format = html outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_CTables.html"))
   /tag = 'ctables2'.
 !ifend
 !if (!scale !ne !null) !then
@@ -1538,7 +1553,7 @@ OMS
 
 * This is for when there are no classification variables.
 !if (!ncvar !eq 0) !then
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats.sav")).
 !if (!allcvars2 !ne !null) !then
 variable level !allcvars (nominal).
 !ifend
@@ -1557,12 +1572,12 @@ CTABLES
   / title corner  = '(Item Seq., Item Name, Key, Reverse)'
           title   = 'Summary Item Statistics'
         !if (!upcase(!timestamp) !eq Y) !then
-          caption = '  ' !quote(!concat('Created )DATE at )TIME (Source: ',!unquote(!indir),'\',!upcase(!infile),'.sav)'))
+          caption = '  ' !quote(!concat('Created )DATE at )TIME (Source: ',!unquote(!indir),'\',!upcase(!unquote(!infile)),'.sav)'))
         !ifend.
 
 * This is to display graphics.
 !if (!upcase(!DoGraphs) = Y) !then
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats4Graphs.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats4Graphs.sav")).
 select if (NCases >= !GraphN !do !crv !in(!critvars) and upcase(rtrim(stat)) ne !quote(!upcase(!concat(CorrW_,!crv))) !doend).
 
 !if (!upcase(!doirt) = Y !and !scale !ne !null) !then
@@ -1572,7 +1587,7 @@ select if (char.index(upcase(stat),"PPLUS") = 0).
 split file by !classvars ISeq ItemID.
 graph / title "Proportions and Biserial Correlations by Response Category"
         !if (!upcase(!timestamp) !eq Y) !then
-      / footnote =  !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
+      / footnote =  !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !unquote(!infile),'.sav")'))
         !ifend
       / bar(simple)=mean(value ) by response
       / panel colvar=stat2 .
@@ -1586,7 +1601,7 @@ split file off.
 !do !i = 1 !to !nitems.
 !let !key = !head(!keylist)
 *echo !quote(!concat('Keys is ',!key)).
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats.sav")).
 !if (!allcvars2 !ne !null) !then
 variable level !allcvars (nominal).
 !ifend
@@ -1606,7 +1621,7 @@ CTABLES
   / CATEGORIES VARIABLES =  Response   Order=A Key=Value empty=exclude
   / title title   = 'Summary Item Statistics'
         !if (!upcase(!timestamp) !eq Y) !then
-          caption = '  ' !quote(!concat('Created )DATE at )TIME (Source: ',!unquote(!indir),'\',!upcase(!infile),'.sav)'))
+          caption = '  ' !quote(!concat('Created )DATE at )TIME (Source: ',!unquote(!indir),'\',!upcase(!unquote(!infile)),'.sav)'))
         !ifend 
     !if (!classvars !ne !null) !then
   / CATEGORIES VARIABLES = !classvars Order=A Key=label empty=exclude total=no
@@ -1619,7 +1634,7 @@ split file off.
 
 * This is to display graphics.
 !if (!upcase(!DoGraphs) = Y) !then
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_ItemStats4Graphs.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_ItemStats4Graphs.sav")).
 select if (ISeq = !i).
 select if (NCases >= !GraphN !do !crv !in(!critvars) and upcase(rtrim(stat)) ne !quote(!upcase(!concat(CorrW_,!crv))) !doend).
 
@@ -1631,7 +1646,7 @@ split file by !classvars iseq ItemID.
 !if (!bv !ne !null) !then
 graph  / title = "Proportions and Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
-       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
+       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !unquote(!infile),'.sav")'))
          !ifend
        / bar(grouped)=mean(value ) by response by !bv
        / panel colvar=stat2.
@@ -1639,7 +1654,7 @@ graph  / title = "Proportions and Biserial Correlations by Response Category"
 select if (char.index(upcase(stat),"CHOOSING") = 0).
 graph  / title = "Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
-       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
+       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !unquote(!infile),'.sav")'))
          !ifend
        / line(multiple)=mean(value ) by response by !bv
        / panel colvar=stat2 .
@@ -1647,7 +1662,7 @@ graph  / title = "Biserial Correlations by Response Category"
 !else
 graph  / title = "Proportions and Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
-       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
+       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !unquote(!infile),'.sav")'))
          !ifend
        / bar(simple)=mean(value ) by response 
        / panel colvar=stat2.
@@ -1655,7 +1670,7 @@ graph  / title = "Proportions and Biserial Correlations by Response Category"
 select if (char.index(upcase(stat),"CHOOSING") = 0).
 graph  / title = "Biserial Correlations by Response Category"
          !if (!upcase(!timestamp) !eq Y) !then
-       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !infile,'.sav")'))
+       / footnote = '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: "', !unquote(!indir), '\', !unquote(!infile),'.sav")'))
          !ifend
        / line(simple)=mean(value ) by response
        / panel colvar=stat2 .
@@ -1666,7 +1681,7 @@ split file off.
 
 * This is to display DIF results.
 !if (!upcase(!DoDIF) = Y !and !bv !ne !null) !then
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_DIF.sav")).
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_DIF.sav")).
 select if (ISeq = !i and Level > 0 and NCases >= !GraphN).
 
 * use only the IRT based score when available.
@@ -1682,7 +1697,7 @@ if (n=0) pplus = 0.
 split file by !classvars iseq ItemID.
 graph / title = "Proportion Correct on the Item by Score Level on the Criterion Variable"
         !if (!upcase(!timestamp) !eq Y) !then
-      / footnote =  '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: ',!unquote(!indir),'\',!upcase(!infile),'.sav)'))
+      / footnote =  '  ' !quote(!concat('Created @@current_month@@/@@current_day@@/@@current_YYYY@@ at @@current_hour@@:@@current_min@@:@@current_sec@@ @@current_ampm@@ (Source: ',!unquote(!indir),'\',!upcase(!unquote(!infile)),'.sav)'))
         !ifend
       / line(multiple)= mean(pplus) by Level by !bv
       / panel colvar = criteria.
@@ -1700,20 +1715,20 @@ echo "* * *".
 
 !let !erasef = "ItemStats_tmp SumStats_tmp DescA DescB Desc2 DescA2 DescB2 Corr GroupValues GroupValues2 GroupValues3 GroupValues4 ResponseStats"
  !do !ef !in(!erasef)
-erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_",!ef,".sav")).
+erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_",!ef,".sav")).
  !doend
 
 !if (!scale !ne !null) !then
-*erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_Cronbach.sav")).
+*erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_Cronbach.sav")).
 !ifend
 
 !if (!upcase(!DoIRT) = Y !and (!scale !ne !null)) !then
-*erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,!filetag,"_GroupMeans.sav")).
+*erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),!filetag,"_GroupMeans.sav")).
 !ifend
 
 !if (!upcase(!DoDIF) = Y !and !bv !ne !null) !then
 !do !cv !in(!critvars)
-erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_",!cv,!filetag,"_DifData.sav")).
+erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_",!cv,!filetag,"_DifData.sav")).
 !doend
 !ifend
 
@@ -1729,18 +1744,18 @@ omsend tag = ['ctables2'].
 !doend
 
 !if (!upcase(!clean) = Y) !then
-erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Val_Labels.sav")).
-erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Var_Labels.sav")).
-erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Desc.sav")).
+erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Val_Labels.sav")).
+erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Var_Labels.sav")).
+erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Desc.sav")).
 
 !if (!upcase(!DoIRT) = Y !and !upcase(!CtrDiff) = Y !and (!scale !ne !null)) !then
-erase file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_IRTStatsShift.sav")).
+erase file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_IRTStatsShift.sav")).
 !ifend
 
 !ifend
 
 * Clean up the file with scored responses.
-get file = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav"))
+get file = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav"))
   / drop = !if (!allcv2 !ne !null) !then !allcv2 !ifend k.
 
 add files
@@ -1749,21 +1764,21 @@ add files
           !firstitem to !lastitem  !concat(!firstitem,"_s") to !concat(!lastitem,"_s")
           !concat(!firstitem,"_p") to !concat(!lastitem,"_p") all.
 
-save outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.sav")).
+save outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.sav")).
 
 !if (!upcase(!writecsv) = Y) !then
-save translate outfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Scored.csv"))
+save translate outfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Scored.csv"))
   / replace / type = csv / fieldnames / encoding = 'LOCALE'.
 !ifend
 
 output save
-  outfile= !quote(!concat(!unquote(!outdir),"\",!outfile,"_Output.spv"))
+  outfile= !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Output.spv"))
   lock = no.
 
 !if (!upcase(!writehtm) = Y) !then
 output export
   / contents export=visible layers=printsetting modelviews=printsetting
-  / html documentfile = !quote(!concat(!unquote(!outdir),"\",!outfile,"_Output.htm"))
+  / html documentfile = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_Output.htm"))
     notescaptions=yes interactlayers=no styling=yes imageformat=jpg
   / jpg percentsize=100 grayscale=no.
 !ifend
