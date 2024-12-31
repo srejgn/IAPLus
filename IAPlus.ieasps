@@ -2,7 +2,7 @@
 * 
 * Version 2022 09 01.
 * 
-* Please report bugs to: egonzalez@ets.org or eugene.gonzalez@iea-hamburg.de.
+* Please report bugs to: gonzalee@bc.edu or eugene.gonzalez@iea-hamburg.de.
 *
 * About the program: This program computes a battery of item and scale related statistics and saves the output
 *                    to CSV files. It computes these statistics overall across the entire dataset, and 
@@ -365,7 +365,13 @@ set tnumbers = labels.
 freq var = !concat(!scale,"_RespType").
 !else
 !do !bv !in(!byvars)
+
+OMS / SELECT TABLES / IF COMMANDS = ["Crosstabs"] SUBTYPES = ["Crosstabulation"]
+    / DESTINATION FORMAT = xlsx OUTFILE = !quote(!concat(!unquote(!outdir),"\",!unquote(!outfile),"_RespType.xlsx")) viewer = yes
+    / tag = 'crosstabs1'.
 crosstabs table = !bv by !concat(!scale,"_RespType") / cell = count rowpercent.
+omsend tag = ['crosstabs1'].
+
 !doend
 !ifend
 
@@ -1817,7 +1823,7 @@ set mprint=off printback=off.
 get data
  / type = xlsx
  / file = !quote(!concat(!unquote(!idir),"\",!unquote(!ifile),".xlsx"))
-  !if (!sheet !ne !null) !then / sheet = name !quote(!sheet) !ifend
+  !if (!unquote(!sheet) !ne !null) !then / sheet = name !quote(!unquote(!sheet)) !ifend
  / datatypemin percentage = 100.
 
 select if (items <> "").
@@ -1828,7 +1834,7 @@ recode keys    ("" = "X") (else = copy).
 recode reverse ("" = "N") (else = copy).
 recode maxscrs ("" = "1") (else = copy).
 save translate
-  / outfile= !quote(!concat(!unquote(!odir),"\",!unquote(!ifile),"_",!sheet,"_ItemList.csv"))
+  / outfile= !quote(!concat(!unquote(!odir),"\",!unquote(!ifile),"_",!unquote(!sheet),"_ItemList.csv"))
   / replace  / type = csv
   / keep = Items Keys Reverse MaxScrs Exclude
   / fieldnames / encoding = 'LOCALE'.
